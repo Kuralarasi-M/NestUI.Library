@@ -31,17 +31,6 @@ export interface BookAuthor {
   death_Year: number;
 }
 
-export interface BookDetails {
-  id: number;
-  title: string;
-  authors: BookAuthor[];
-  summaries: string[];
-  subjects: string[];
-  languages: string[];
-  formats: Record<string, string>;
-  download_Count: number;
-}
-
 export async function getAllBooks(): Promise<Book[]> {
   const response = await fetch(`${API_BASE_URL}/AllBooks`);
 

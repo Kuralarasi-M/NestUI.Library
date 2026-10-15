@@ -83,12 +83,13 @@ export default function BookDetailsPage() {
     );
   }
 
-  const coverUrl = book.formats["image/jpeg"];
+  const coverUrl = book.formats?.["image/jpeg"];
 
   const hasReadableEdition = Boolean(
-    book.formats["text/html"] ||
-      book.formats["text/plain; charset=utf-8"] ||
-      book.formats["text/plain"]
+    book.bookText ||
+      book.formats?.["text/html"] ||
+      book.formats?.["text/plain; charset=utf-8"] ||
+      book.formats?.["text/plain"]
   );
 
   function openReader() {
