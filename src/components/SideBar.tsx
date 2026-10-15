@@ -7,8 +7,12 @@ import {
   History,
   Search,
   X,
+  LogIn,
+  LogOut,
 } from "lucide-react";
-import { NavLink } from "react-router-dom";
+import { NavLink, useNavigate } from "react-router-dom";
+import { useEffect, useState } from "react";
+import { getLoggedInUser, logoutUser, type LoginResponse } from "../services/authServices";
 
 interface SidebarProps {
   open: boolean;
@@ -24,6 +28,18 @@ const links = [
 ];
 
 export default function Sidebar({ open, onClose }: SidebarProps) {
+  const [currentUser, setCurrentUser] = useState<LoginResponse | null>(getLoggedInUser);
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    setCurrentUser(getLoggedInUser());
+  }, [open]);
+
+  function handleLogout() {
+    logoutUser();
+    setCurrentUser(null);
+    navigate("/login");
+  }
   return (
     <>
       {open && (
@@ -84,12 +100,44 @@ export default function Sidebar({ open, onClose }: SidebarProps) {
           ))}
         </nav>
 
-        <div className="mt-auto rounded-xl bg-indigo-50 p-4 dark:bg-indigo-500/10">
-          <BookOpen className="mb-2 text-indigo-600 dark:text-indigo-400" />
-          <p className="text-sm font-semibold">Your next chapter awaits.</p>
-          <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
-            Discover a new book today.
-          </p>
+        <div className="mt-auto space-y-3">
+          <div className="rounded-xl bg-indigo-50 p-4 dark:bg-indigo-500/10">
+            <BookOpen className="mb-2 text-indigo-600 dark:text-indigo-400" />
+            <p className="text-sm font-semibold">Your next chapter awaits.</p>
+            <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
+              Discover a new book today.
+            </p>
+          </div>
+
+          {currentUser ? (
+            <div className="flex items-center justify-between rounded-xl border border-slate-200 bg-slate-50 p-3 dark:border-white/10 dark:bg-white/5">
+              <div className="flex items-center gap-2 overflow-hidden">
+                <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-indigo-600 text-xs font-bold text-white">
+                  {currentUser.role?.[0]?.toUpperCase() || "U"}
+                </div>
+                <div className="truncate text-xs">
+                  <p className="font-semibold truncate">{currentUser.role || "Member"}</p>
+                  <p className="text-slate-400 text-[10px]">Active</p>
+                </div>
+              </div>
+              <button
+                onClick={handleLogout}
+                title="Log out"
+                className="rounded-lg p-1.5 text-slate-500 hover:bg-slate-200 hover:text-red-600 dark:hover:bg-white/10 dark:hover:text-red-400 transition"
+              >
+                <LogOut size={16} />
+              </button>
+            </div>
+          ) : (
+            <NavLink
+              to="/login"
+              onClick={onClose}
+              className="flex items-center justify-center gap-2 rounded-xl bg-indigo-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-indigo-700"
+            >
+              <LogIn size={16} />
+              Sign In
+            </NavLink>
+          )}
         </div>
       </aside>
     </>

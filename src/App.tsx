@@ -12,6 +12,7 @@ import Dashboard from "./pages/Dashboard";
 import BookDetailsPage from "./pages/BookDetailsPage";
 import BookReaderPage from "./pages/BookReaderPage";
 import NotFoundPage from "./pages/NotFoundPage";
+import AuthPage from "./pages/AuthPage";
 
 function LibraryLayout() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -49,6 +50,9 @@ export default function App() {
   return (
     <BrowserRouter>
       <Routes>
+        {/* Authentication page */}
+        <Route path="/login" element={<AuthPage />} />
+
         {/* Pages with the regular sidebar */}
         <Route element={<LibraryLayout />}>
           <Route path="/" element={<DashboardRoute />} />
