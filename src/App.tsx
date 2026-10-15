@@ -4,6 +4,7 @@ import {
   Routes,
   Route,
   Outlet,
+  Navigate,
   useOutletContext,
 } from "react-router-dom";
 
@@ -13,6 +14,7 @@ import BookDetailsPage from "./pages/BookDetailsPage";
 import BookReaderPage from "./pages/BookReaderPage";
 import NotFoundPage from "./pages/NotFoundPage";
 import AuthPage from "./pages/AuthPage";
+import { getLoggedInUser } from "./services/authServices";
 
 function LibraryLayout() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -34,6 +36,11 @@ function DashboardRoute() {
   const { onOpenMenu } = useOutletContext<{
     onOpenMenu: () => void;
   }>();
+
+  const user = getLoggedInUser();
+  if (!user) {
+    return <Navigate to="/login" replace />;
+  }
 
   return <Dashboard onOpenMenu={onOpenMenu} />;
 }

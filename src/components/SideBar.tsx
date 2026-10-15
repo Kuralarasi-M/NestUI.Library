@@ -135,7 +135,7 @@ export default function Sidebar({ open, onClose }: SidebarProps) {
               className="flex items-center justify-center gap-2 rounded-xl bg-indigo-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-indigo-700"
             >
               <LogIn size={16} />
-              Sign In
+              Log Out
             </NavLink>
           )}
         </div>
