@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { useNavigate, Link } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { BookOpen, Mail, Lock, User, ArrowRight, LoaderCircle } from "lucide-react";
 import { loginUser, registerUser, saveLoggedInUser } from "../services/authServices";
 
@@ -186,16 +186,6 @@ export default function AuthPage() {
               </button>
             </>
           )}
-        </div>
-
-        {/* Guest link */}
-        <div className="mt-4 border-t border-slate-100 pt-4 text-center dark:border-white/5">
-          <Link
-            to="/"
-            className="text-xs text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"
-          >
-            Continue as Guest →
-          </Link>
         </div>
       </div>
     </div>
