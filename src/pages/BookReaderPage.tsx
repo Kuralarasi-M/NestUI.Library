@@ -1,23 +1,20 @@
-
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, useCallback } from "react";
 import {
   ArrowLeft,
   Bookmark,
-  BookOpen,
-  Check,
   ChevronLeft,
   ChevronRight,
   Coffee,
-  Home,
-  List,
   LoaderCircle,
-  Menu,
   Minus,
   Moon,
   Plus,
   Settings2,
   Sun,
   X,
+  Columns2,
+  Square,
+  Sparkles,
 } from "lucide-react";
 import { useNavigate, useParams } from "react-router-dom";
 import { getBookDetails } from "../services/bookService";
@@ -26,43 +23,58 @@ import { useTheme } from "../hooks/useTheme";
 
 const readerThemes = {
   light: {
-    page: "bg-[#F5F3EF] text-[#292720]",
-    muted: "text-stone-500",
-    border: "border-stone-200",
-    toolbar: "bg-white",
-    sidebar: "bg-white",
-    control: "bg-white hover:bg-stone-100",
-    active: "bg-indigo-50 text-indigo-700",
-    paper: "bg-white border-stone-200",
-    progress: "bg-indigo-600",
-    track: "bg-slate-200",
-    inactive: "hover:bg-stone-100",
+    bg: "bg-[#F3EFE6]",
+    bookBg: "bg-[#FAF7F0]",
+    bookBorder: "border-[#E3DAC9]",
+    bookShadow: "shadow-[0_20px_50px_rgba(40,30,20,0.15)]",
+    spine: "from-black/10 via-black/5 to-transparent",
+    centerCrease: "border-[#DFD6C3]",
+    text: "text-[#2C2523]",
+    muted: "text-[#857973]",
+    pageNumber: "text-[#A89F99]",
+    toolbar: "bg-[#FAF7F0]/90 border-[#E3DAC9] text-[#2C2523]",
+    sidebar: "bg-[#FAF7F0] border-[#E3DAC9] text-[#2C2523]",
+    control: "bg-[#ECE6D8] hover:bg-[#E2D9C7] text-[#2C2523]",
+    active: "bg-indigo-600 text-white",
+    progress: "bg-amber-700",
+    track: "bg-[#DFD6C3]",
+    chapterHeading: "text-[#5C3D2E]",
   },
   dark: {
-    page: "bg-[#17191F] text-[#E7E5E4]",
+    bg: "bg-[#121316]",
+    bookBg: "bg-[#1C1E24]",
+    bookBorder: "border-white/10",
+    bookShadow: "shadow-[0_25px_60px_rgba(0,0,0,0.7)]",
+    spine: "from-black/40 via-black/20 to-transparent",
+    centerCrease: "border-white/5",
+    text: "text-[#DCDAD5]",
     muted: "text-slate-400",
-    border: "border-white/10",
-    toolbar: "bg-[#1D2028]",
-    sidebar: "bg-[#1D2028]",
-    control: "bg-[#272A34] hover:bg-[#323642]",
-    active: "bg-indigo-500/20 text-indigo-300",
-    paper: "bg-[#20232B] border-white/10",
+    pageNumber: "text-slate-500",
+    toolbar: "bg-[#1C1E24]/90 border-white/10 text-white",
+    sidebar: "bg-[#1C1E24] border-white/10 text-white",
+    control: "bg-[#282B34] hover:bg-[#343844] text-white",
+    active: "bg-indigo-600 text-white",
     progress: "bg-indigo-400",
     track: "bg-white/10",
-    inactive: "hover:bg-white/5",
+    chapterHeading: "text-indigo-300",
   },
   sepia: {
-    page: "bg-[#E8DDC7] text-[#51412F]",
-    muted: "text-[#86745E]",
-    border: "border-[#D4C4A7]",
-    toolbar: "bg-[#F4ECD8]",
-    sidebar: "bg-[#F4ECD8]",
-    control: "bg-[#F8F0DE] hover:bg-[#E9DCC1]",
-    active: "bg-amber-200 text-amber-900",
-    paper: "bg-[#FAF3E3] border-[#DCCDB1]",
-    progress: "bg-amber-700",
-    track: "bg-amber-200",
-    inactive: "hover:bg-amber-200/50",
+    bg: "bg-[#E6D7BD]",
+    bookBg: "bg-[#F4E9D5]",
+    bookBorder: "border-[#D6C4A5]",
+    bookShadow: "shadow-[0_20px_50px_rgba(70,45,20,0.2)]",
+    spine: "from-[#4A3B2C]/15 via-black/5 to-transparent",
+    centerCrease: "border-[#D6C4A5]",
+    text: "text-[#433022]",
+    muted: "text-[#876F58]",
+    pageNumber: "text-[#A28870]",
+    toolbar: "bg-[#F4E9D5]/90 border-[#D6C4A5] text-[#433022]",
+    sidebar: "bg-[#F4E9D5] border-[#D6C4A5] text-[#433022]",
+    control: "bg-[#E5D5BC] hover:bg-[#D9C6A9] text-[#433022]",
+    active: "bg-amber-800 text-white",
+    progress: "bg-amber-800",
+    track: "bg-[#D6C4A5]",
+    chapterHeading: "text-amber-900",
   },
 };
 
@@ -70,7 +82,6 @@ export default function BookReaderPage() {
   const { gutendexId } = useParams();
   const navigate = useNavigate();
 
-  // Use the shared theme hook instead of separate theme state.
   const { theme, setTheme } = useTheme();
 
   const [book, setBook] = useState<BookDetails | null>(null);
@@ -79,19 +90,16 @@ export default function BookReaderPage() {
   const [error, setError] = useState("");
 
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const [activeSection, setActiveSection] = useState<
-    "book" | "appearance"
-  >("book");
-
-  const [fontSize, setFontSize] = useState(18);
-  const [lineHeight, setLineHeight] = useState(1.9);
+  const [fontSize, setFontSize] = useState(17);
+  const [fontFamily, setFontFamily] = useState<"serif" | "sans" | "mono">("serif");
+  const [lineHeight, setLineHeight] = useState(1.85);
+  const [isTwoPage, setIsTwoPage] = useState(true);
+  const [currentPage, setCurrentPage] = useState(0);
   const [bookmarked, setBookmarked] = useState(false);
-  const [progress, setProgress] = useState(0);
 
-  const colors = readerThemes[theme];
-  const coverUrl = book?.formats?.["image/jpeg"];
+  const colors = readerThemes[theme] || readerThemes.light;
 
-  // Load book details and text from the backend API.
+  // Load book details and Gutenberg text
   useEffect(() => {
     let cancelled = false;
 
@@ -109,43 +117,29 @@ export default function BookReaderPage() {
         setContent("");
 
         const details = await getBookDetails(Number(gutendexId));
-
         if (cancelled) return;
 
         setBook(details);
 
         if (!details.bookText?.trim()) {
-          throw new Error(
-            "Book text is not available. Please check your backend API response."
-          );
+          throw new Error("Book text is currently not available for reading.");
         }
 
         setContent(details.bookText);
 
-        const savedBookmark = localStorage.getItem(
-          `reader-bookmark-${gutendexId}`
-        );
-
+        const savedBookmark = localStorage.getItem(`reader-bookmark-${gutendexId}`);
         setBookmarked(savedBookmark === "true");
 
-        const savedProgress = Number(
-          localStorage.getItem(
-            `reader-progress-${gutendexId}`
-          ) ?? 0
-        );
-
-        setProgress(
-          Number.isFinite(savedProgress)
-            ? Math.min(100, Math.max(0, savedProgress))
-            : 0
-        );
+        const savedPage = localStorage.getItem(`reader-page-${gutendexId}`);
+        if (savedPage) {
+          const parsed = parseInt(savedPage, 10);
+          if (!isNaN(parsed) && parsed >= 0) {
+            setCurrentPage(parsed);
+          }
+        }
       } catch (err) {
         if (!cancelled) {
-          setError(
-            err instanceof Error
-              ? err.message
-              : "Unable to open this book."
-          );
+          setError(err instanceof Error ? err.message : "Unable to open this book.");
         }
       } finally {
         if (!cancelled) {
@@ -155,625 +149,506 @@ export default function BookReaderPage() {
     }
 
     loadBook();
-
     return () => {
       cancelled = true;
     };
   }, [gutendexId]);
 
-  // Split the plain-text book into paragraphs.
-  const paragraphs = useMemo(() => {
-    return content
-      .replace(/\r\n/g, "\n")
+  // Clean Gutenberg headers/footers and build paginated book pages
+  const pages = useMemo(() => {
+    if (!content) return [];
+
+    // Strip standard Gutenberg legal boilerplates for an authentic book feel
+    let cleanText = content.replace(/\r\n/g, "\n");
+    const startIdx = cleanText.search(/\*\*\* START OF (THE|THIS) PROJECT GUTENBERG EBOOK[^\*]*\*\*\*/i);
+    if (startIdx !== -1) {
+      const offset = cleanText.indexOf("\n", startIdx);
+      if (offset !== -1) cleanText = cleanText.slice(offset).trim();
+    }
+    const endIdx = cleanText.search(/\*\*\* END OF (THE|THIS) PROJECT GUTENBERG EBOOK/i);
+    if (endIdx !== -1) {
+      cleanText = cleanText.slice(0, endIdx).trim();
+    }
+
+    const paragraphs = cleanText
       .split(/\n\s*\n/)
-      .map((paragraph) => paragraph.trim())
+      .map((p) => p.trim())
       .filter(Boolean);
-  }, [content]);
 
-  // Update and save reading progress while scrolling.
-  useEffect(() => {
-    function updateProgress() {
-      const scrollable =
-        document.documentElement.scrollHeight - window.innerHeight;
+    // Approximate ~260 words per book page for comfortable typography
+    const pageList: string[][] = [];
+    let currentPageParagraphs: string[] = [];
+    let currentWordCount = 0;
 
-      const percentage =
-        scrollable <= 0
-          ? 0
-          : Math.round((window.scrollY / scrollable) * 100);
+    for (const paragraph of paragraphs) {
+      const words = paragraph.split(/\s+/).length;
+      const isChapterHeading =
+        paragraph.length < 90 &&
+        (/^(chapter|book|act|scene|part|prologue|epilogue)\b/i.test(paragraph) ||
+          paragraph === paragraph.toUpperCase());
 
-      const safeProgress = Math.min(100, Math.max(0, percentage));
+      // If chapter heading, start a clean new page
+      if (isChapterHeading && currentPageParagraphs.length > 0) {
+        pageList.push(currentPageParagraphs);
+        currentPageParagraphs = [paragraph];
+        currentWordCount = words;
+        continue;
+      }
 
-      setProgress(safeProgress);
-
-      if (gutendexId) {
-        localStorage.setItem(
-          `reader-progress-${gutendexId}`,
-          String(safeProgress)
-        );
+      if (currentWordCount + words > 260 && currentPageParagraphs.length > 0) {
+        pageList.push(currentPageParagraphs);
+        currentPageParagraphs = [paragraph];
+        currentWordCount = words;
+      } else {
+        currentPageParagraphs.push(paragraph);
+        currentWordCount += words;
       }
     }
 
-    window.addEventListener("scroll", updateProgress, {
-      passive: true,
-    });
+    if (currentPageParagraphs.length > 0) {
+      pageList.push(currentPageParagraphs);
+    }
 
-    updateProgress();
+    return pageList;
+  }, [content]);
 
-    return () => {
-      window.removeEventListener("scroll", updateProgress);
-    };
-  }, [gutendexId, content]);
+  const totalPages = pages.length || 1;
+
+  // Turn page safely and persist
+  const goToPage = useCallback(
+    (pageIndex: number) => {
+      const safePage = Math.max(0, Math.min(pageIndex, totalPages - 1));
+      setCurrentPage(safePage);
+      if (gutendexId) {
+        localStorage.setItem(`reader-page-${gutendexId}`, String(safePage));
+      }
+    },
+    [totalPages, gutendexId]
+  );
+
+  const prevStep = isTwoPage ? 2 : 1;
+  const nextStep = isTwoPage ? 2 : 1;
+
+  const handlePrev = useCallback(() => {
+    goToPage(currentPage - prevStep);
+  }, [currentPage, prevStep, goToPage]);
+
+  const handleNext = useCallback(() => {
+    goToPage(currentPage + nextStep);
+  }, [currentPage, nextStep, goToPage]);
+
+  // Keyboard navigation (ArrowLeft & ArrowRight)
+  useEffect(() => {
+    function handleKeyDown(e: KeyboardEvent) {
+      if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) return;
+      if (e.key === "ArrowLeft" || e.key === "PageUp") {
+        e.preventDefault();
+        handlePrev();
+      } else if (e.key === "ArrowRight" || e.key === "PageDown" || e.key === " ") {
+        e.preventDefault();
+        handleNext();
+      }
+    }
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [handlePrev, handleNext]);
 
   function toggleBookmark() {
-    const nextValue = !bookmarked;
-
-    setBookmarked(nextValue);
-
+    const nextVal = !bookmarked;
+    setBookmarked(nextVal);
     if (gutendexId) {
-      localStorage.setItem(
-        `reader-bookmark-${gutendexId}`,
-        String(nextValue)
+      localStorage.setItem(`reader-bookmark-${gutendexId}`, String(nextVal));
+    }
+  }
+
+  const progressPercentage = Math.round(((currentPage + 1) / totalPages) * 100);
+
+  // Render an authentic book page
+  const renderBookPage = (pageIndex: number, _side: "left" | "right" | "single") => {
+    const pageContent = pages[pageIndex];
+    if (!pageContent) {
+      return (
+        <div
+          className={`flex h-full w-full flex-col items-center justify-center p-8 select-none ${colors.muted}`}
+        >
+          <Sparkles size={28} className="mb-3 opacity-30" />
+          <p className="text-sm italic font-serif">End of Book</p>
+        </div>
       );
     }
-  }
 
-  function changeFontSize(increase: boolean) {
-    setFontSize((size) =>
-      increase ? Math.min(28, size + 1) : Math.max(14, size - 1)
+    return (
+      <div className="relative flex h-full flex-col justify-between p-7 sm:p-10 select-text">
+        {/* Header running head */}
+        <div className="flex items-center justify-between border-b border-current/10 pb-2 text-[11px] uppercase tracking-widest opacity-60">
+          <span className="truncate max-w-[200px]">{book?.title}</span>
+          <span className="font-serif">Page {pageIndex + 1}</span>
+        </div>
+
+        {/* Page text body */}
+        <div
+          className={`my-auto py-4 overflow-y-auto ${
+            fontFamily === "serif"
+              ? "font-serif"
+              : fontFamily === "mono"
+              ? "font-mono"
+              : "font-sans"
+          }`}
+          style={{
+            fontSize: `${fontSize}px`,
+            lineHeight,
+            textAlign: "justify",
+          }}
+        >
+          {pageContent.map((paragraph, idx) => {
+            const isHeading =
+              paragraph.length < 90 &&
+              (/^(chapter|book|act|scene|part|prologue|epilogue)\b/i.test(paragraph) ||
+                paragraph === paragraph.toUpperCase());
+
+            if (isHeading) {
+              return (
+                <h2
+                  key={idx}
+                  className={`my-6 text-center text-lg font-bold tracking-wide uppercase ${colors.chapterHeading}`}
+                >
+                  {paragraph}
+                </h2>
+              );
+            }
+
+            // Drop cap for the very first letter of a chapter page
+            const isFirstPara = idx === 0 || (idx === 1 && pageContent[0].length < 90);
+
+            return (
+              <p key={idx} className="mb-4 text-justify leading-relaxed">
+                {isFirstPara && paragraph.length > 20 ? (
+                  <>
+                    <span className="float-left mr-2.5 text-4xl sm:text-5xl font-serif font-bold leading-none text-indigo-700 dark:text-indigo-400">
+                      {paragraph[0]}
+                    </span>
+                    {paragraph.slice(1)}
+                  </>
+                ) : (
+                  paragraph
+                )}
+              </p>
+            );
+          })}
+        </div>
+
+        {/* Footer with page number */}
+        <div className="flex items-center justify-center pt-2 text-xs font-serif opacity-50">
+          — {pageIndex + 1} —
+        </div>
+      </div>
     );
-  }
+  };
 
-  function goToStart() {
-    window.scrollTo({
-      top: 0,
-      behavior: "smooth",
-    });
-  }
-
-  function continueReading() {
-    window.scrollBy({
-      top: window.innerHeight * 0.8,
-      behavior: "smooth",
-    });
-  }
-
-  function resumeReading() {
-    const scrollable =
-      document.documentElement.scrollHeight - window.innerHeight;
-
-    if (scrollable > 0) {
-      window.scrollTo({
-        top: (progress / 100) * scrollable,
-        behavior: "smooth",
-      });
-    }
-  }
-
-  // Loading screen.
   if (loading) {
     return (
-      <main className="flex min-h-screen items-center justify-center bg-stone-100">
-        <div className="flex items-center gap-3 text-stone-600">
-          <LoaderCircle className="animate-spin" size={24} />
-          <span>Opening your book...</span>
-        </div>
-      </main>
+      <div className={`flex min-h-screen flex-col items-center justify-center ${colors.bg}`}>
+        <LoaderCircle size={36} className="animate-spin text-indigo-600 mb-3" />
+        <p className="font-serif text-sm">Turning to your page...</p>
+      </div>
     );
   }
 
-  // Error screen.
   if (error || !book) {
     return (
-      <main className={`min-h-screen p-6 ${colors.page}`}>
+      <div className={`flex min-h-screen flex-col items-center justify-center p-6 text-center ${colors.bg}`}>
+        <p className="font-serif text-lg text-red-600 mb-4">{error || "Book not found."}</p>
         <button
           onClick={() => navigate(-1)}
-          className="mb-6 flex items-center gap-2 text-indigo-600"
+          className="rounded-xl bg-indigo-600 px-5 py-2.5 text-sm font-semibold text-white shadow"
         >
-          <ArrowLeft size={18} />
-          Back
+          Back to Library
         </button>
-
-        <div className="max-w-2xl rounded-xl border border-red-200 bg-red-50 p-5 text-red-700">
-          <p role="alert">{error || "Book not found."}</p>
-
-          <button
-            onClick={() => window.location.reload()}
-            className="mt-4 rounded-lg bg-indigo-600 px-4 py-2 text-white hover:bg-indigo-700"
-          >
-            Try again
-          </button>
-        </div>
-      </main>
+      </div>
     );
   }
 
   return (
-    <main
-      className={`min-h-screen transition-colors duration-200 ${colors.page}`}
-    >
-      {/* Mobile sidebar backdrop */}
-      {sidebarOpen && (
-        <button
-          type="button"
-          aria-label="Close sidebar"
-          onClick={() => setSidebarOpen(false)}
-          className="fixed inset-0 z-40 bg-black/50 lg:hidden"
-        />
-      )}
-
-      {/* Sidebar */}
-      <aside
-        className={`fixed inset-y-0 left-0 z-50 flex w-72 flex-col border-r ${colors.border} ${colors.sidebar} transition-transform duration-200 ${
-          sidebarOpen ? "translate-x-0" : "-translate-x-full"
-        } lg:translate-x-0`}
+    <div className={`relative flex min-h-screen flex-col ${colors.bg} ${colors.text} transition-colors duration-300`}>
+      {/* Top Reading Toolbar */}
+      <header
+        className={`sticky top-0 z-30 flex items-center justify-between border-b px-4 py-3 backdrop-blur-md shadow-sm sm:px-8 ${colors.toolbar}`}
       >
-        <div
-          className={`flex items-center justify-between border-b ${colors.border} p-5`}
-        >
+        <div className="flex items-center gap-3">
           <button
-            onClick={() => navigate("/")}
-            className="flex items-center gap-2 font-semibold"
-          >
-            <BookOpen className="text-indigo-500" size={23} />
-            <span>Library Reader</span>
-          </button>
-
-          <button
-            onClick={() => setSidebarOpen(false)}
-            aria-label="Close sidebar"
-            className={`rounded-lg p-2 ${colors.inactive} lg:hidden`}
-          >
-            <X size={19} />
-          </button>
-        </div>
-
-        {/* Scrollable middle section */}
-        <div className="flex-1 overflow-y-auto">
-          {/* Book cover */}
-          <div className={`border-b ${colors.border} p-5`}>
-            <div className="mb-4 flex justify-center">
-            {coverUrl ? (
-              <img
-                src={coverUrl}
-                alt={`Cover of ${book.title}`}
-                className="h-48 w-36 rounded-md object-cover shadow-lg"
-                onError={(event) => {
-                  event.currentTarget.style.display = "none";
-                }}
-              />
-            ) : (
-              <div
-                className={`flex h-48 w-36 flex-col items-center justify-center rounded-md border ${colors.border} ${colors.paper} p-3 text-center shadow-lg`}
-              >
-                <BookOpen
-                  size={36}
-                  className="mb-4 text-indigo-500"
-                />
-                <span className="text-sm font-bold">
-                  {book.title}
-                </span>
-              </div>
-            )}
-          </div>
-
-          <h2 className="line-clamp-2 text-center font-semibold">
-            {book.title}
-          </h2>
-
-          <p className={`mt-1 text-center text-sm ${colors.muted}`}>
-            {book.authors.map((author) => author.name).join(", ")}
-          </p>
-
-          <div className="mt-5">
-            <div className="mb-2 flex items-center justify-between text-xs">
-              <span className={colors.muted}>
-                Reading progress
-              </span>
-              <span className="font-semibold">{progress}%</span>
-            </div>
-
-            <div
-              className={`h-2 overflow-hidden rounded-full ${colors.track}`}
-            >
-              <div
-                className={`h-full rounded-full transition-all ${colors.progress}`}
-                style={{ width: `${progress}%` }}
-              />
-            </div>
-
-            <button
-              onClick={resumeReading}
-              disabled={progress === 0}
-              className="mt-3 w-full rounded-lg bg-indigo-600 px-3 py-2 text-sm font-medium text-white hover:bg-indigo-700 disabled:cursor-not-allowed disabled:opacity-40"
-            >
-              Resume reading
-            </button>
-          </div>
-        </div>
-
-        {/* Sidebar navigation */}
-        <nav className="space-y-1 p-3">
-          <p
-            className={`px-3 pb-2 pt-1 text-xs font-semibold uppercase tracking-wider ${colors.muted}`}
-          >
-            Reader menu
-          </p>
-
-          <button
-            onClick={() => {
-              setActiveSection("book");
-              setSidebarOpen(false);
-              goToStart();
-            }}
-            className={`flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm ${
-              activeSection === "book"
-                ? colors.active
-                : colors.inactive
-            }`}
-          >
-            <List size={18} />
-            Book information
-          </button>
-
-          <button
-            onClick={() => setActiveSection("appearance")}
-            className={`flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm ${
-              activeSection === "appearance"
-                ? colors.active
-                : colors.inactive
-            }`}
-          >
-            <Settings2 size={18} />
-            Reading settings
-          </button>
-
-          <button
-            onClick={toggleBookmark}
-            className={`flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm ${colors.inactive} ${
-              bookmarked ? "text-indigo-500" : ""
-            }`}
-          >
-            <Bookmark
-              size={18}
-              fill={bookmarked ? "currentColor" : "none"}
-            />
-            {bookmarked ? "Bookmarked" : "Bookmark this book"}
-
-            {bookmarked && (
-              <Check size={15} className="ml-auto" />
-            )}
-          </button>
-        </nav>
-
-        {/* Appearance settings */}
-        {activeSection === "appearance" && (
-          <div className={`border-t ${colors.border} p-4`}>
-            <p className="mb-3 text-sm font-semibold">
-              Appearance
-            </p>
-
-            <div className="grid grid-cols-3 gap-2">
-              <button
-                onClick={() => setTheme("light")}
-                aria-pressed={theme === "light"}
-                className={`flex flex-col items-center gap-2 rounded-lg border ${colors.border} p-3 ${
-                  theme === "light"
-                    ? "ring-2 ring-indigo-500"
-                    : ""
-                }`}
-              >
-                <Sun size={18} />
-                <span className="text-xs">Light</span>
-              </button>
-
-              <button
-                onClick={() => setTheme("dark")}
-                aria-pressed={theme === "dark"}
-                className={`flex flex-col items-center gap-2 rounded-lg border ${colors.border} p-3 ${
-                  theme === "dark"
-                    ? "ring-2 ring-indigo-500"
-                    : ""
-                }`}
-              >
-                <Moon size={18} />
-                <span className="text-xs">Dark</span>
-              </button>
-
-              <button
-                onClick={() => setTheme("sepia")}
-                aria-pressed={theme === "sepia"}
-                className={`flex flex-col items-center gap-2 rounded-lg border ${colors.border} p-3 ${
-                  theme === "sepia"
-                    ? "ring-2 ring-indigo-500"
-                    : ""
-                }`}
-              >
-                <Coffee size={18} />
-                <span className="text-xs">Sepia</span>
-              </button>
-            </div>
-
-            {/* Font size */}
-            <div className="mt-5">
-              <div className="mb-3 flex items-center justify-between">
-                <label className="text-sm">Font size</label>
-                <span className={`text-sm ${colors.muted}`}>
-                  {fontSize}px
-                </span>
-              </div>
-
-              <div className="flex items-center justify-between gap-3">
-                <button
-                  onClick={() => changeFontSize(false)}
-                  disabled={fontSize <= 14}
-                  aria-label="Decrease font size"
-                  className={`rounded-lg p-2 ${colors.control} disabled:opacity-30`}
-                >
-                  <Minus size={18} />
-                </button>
-
-                <div
-                  className={`h-1 flex-1 rounded-full ${colors.track}`}
-                >
-                  <div
-                    className={`h-full rounded-full ${colors.progress}`}
-                    style={{
-                      width: `${((fontSize - 14) / 14) * 100}%`,
-                    }}
-                  />
-                </div>
-
-                <button
-                  onClick={() => changeFontSize(true)}
-                  disabled={fontSize >= 28}
-                  aria-label="Increase font size"
-                  className={`rounded-lg p-2 ${colors.control} disabled:opacity-30`}
-                >
-                  <Plus size={18} />
-                </button>
-              </div>
-            </div>
-
-            {/* Line spacing */}
-            <div className="mt-5">
-              <label className="mb-2 block text-sm">
-                Line spacing
-              </label>
-
-              <select
-                value={lineHeight}
-                onChange={(event) =>
-                  setLineHeight(Number(event.target.value))
-                }
-                className={`w-full rounded-lg border ${colors.border} ${colors.control} px-3 py-2 text-sm`}
-              >
-                <option value={1.5}>Compact</option>
-                <option value={1.9}>Comfortable</option>
-                <option value={2.2}>Relaxed</option>
-              </select>
-            </div>
-          </div>
-        )}
-        </div>
-
-        {/* Sidebar footer */}
-        <div className={`mt-auto border-t ${colors.border} p-4`}>
-          <button
-            onClick={() => navigate(-1)}
-            className={`flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm ${colors.control}`}
+            onClick={() => navigate(`/books/${gutendexId}`)}
+            className={`flex items-center gap-2 rounded-xl p-2 text-sm font-medium transition ${colors.control}`}
+            title="Back to Book Details"
           >
             <ArrowLeft size={18} />
-            Back to book details
+            <span className="hidden sm:inline">Details</span>
           </button>
 
+          <div className="max-w-[200px] sm:max-w-md truncate">
+            <h1 className="truncate text-sm font-bold font-serif">{book.title}</h1>
+            <p className={`truncate text-xs ${colors.muted}`}>
+              {book.authors.map((a) => a.name).join(", ")}
+            </p>
+          </div>
+        </div>
+
+        {/* Action icons */}
+        <div className="flex items-center gap-2">
+          {/* Two-page / Single-page toggle (on desktop) */}
           <button
-            onClick={() => navigate("/")}
-            className={`mt-1 flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm ${colors.control}`}
+            onClick={() => setIsTwoPage(!isTwoPage)}
+            className={`hidden lg:flex items-center gap-1 rounded-xl p-2 text-xs font-semibold ${colors.control}`}
+            title={isTwoPage ? "Switch to Single Page" : "Switch to Two-Page Spread"}
           >
-            <Home size={18} />
-            Home
+            {isTwoPage ? <Columns2 size={18} /> : <Square size={18} />}
+          </button>
+
+          {/* Bookmark */}
+          <button
+            onClick={toggleBookmark}
+            className={`rounded-xl p-2 transition ${
+              bookmarked ? "text-amber-500 bg-amber-500/10" : colors.control
+            }`}
+            title={bookmarked ? "Bookmarked" : "Add Bookmark"}
+          >
+            <Bookmark size={18} fill={bookmarked ? "currentColor" : "none"} />
+          </button>
+
+          {/* Settings button */}
+          <button
+            onClick={() => setSidebarOpen(true)}
+            className={`flex items-center gap-1.5 rounded-xl px-3 py-2 text-xs font-semibold transition ${colors.control}`}
+          >
+            <Settings2 size={16} />
+            <span>Aa</span>
           </button>
         </div>
-      </aside>
+      </header>
 
-      {/* Main reader area */}
-      <div className="min-h-screen lg:pl-72">
-        {/* Toolbar */}
-        <header
-          className={`sticky top-0 z-30 border-b ${colors.border} ${colors.toolbar} px-3 py-3 sm:px-6`}
+      {/* Main Reading Stage */}
+      <main className="relative flex flex-1 items-center justify-center p-3 sm:p-6 lg:p-8">
+        {/* Left page-turn navigation arrow */}
+        <button
+          onClick={handlePrev}
+          disabled={currentPage === 0}
+          aria-label="Previous Page"
+          className="absolute left-2 sm:left-4 z-20 flex h-12 w-12 items-center justify-center rounded-full bg-black/10 hover:bg-black/20 text-current backdrop-blur-sm transition disabled:opacity-0 disabled:pointer-events-none"
         >
-          <div className="mx-auto flex max-w-5xl items-center gap-3">
-            <button
-              onClick={() => setSidebarOpen(true)}
-              aria-label="Open sidebar"
-              className={`rounded-lg p-2 ${colors.control} lg:hidden`}
-            >
-              <Menu size={21} />
-            </button>
+          <ChevronLeft size={28} />
+        </button>
 
-            <button
-              onClick={() => navigate(-1)}
-              aria-label="Back"
-              className={`hidden rounded-lg p-2 ${colors.control} sm:block`}
-            >
-              <ArrowLeft size={19} />
-            </button>
+        {/* Realistic Book Mockup Container */}
+        <div
+          className={`relative flex w-full max-w-5xl rounded-2xl border ${colors.bookBorder} ${colors.bookBg} ${colors.bookShadow} min-h-[75vh] max-h-[85vh] overflow-hidden transition-all duration-300`}
+        >
+          {/* Left Page */}
+          <div className={`relative flex-1 ${isTwoPage ? "border-r" : ""} ${colors.centerCrease}`}>
+            {renderBookPage(currentPage, isTwoPage ? "left" : "single")}
 
-            <div className="min-w-0 flex-1">
-              <p className="truncate text-sm font-semibold">
-                {book.title}
-              </p>
-              <p className={`truncate text-xs ${colors.muted}`}>
-                {book.authors
-                  .map((author) => author.name)
-                  .join(", ")}
-              </p>
-            </div>
-
-            <button
-              onClick={toggleBookmark}
-              aria-label={
-                bookmarked ? "Remove bookmark" : "Bookmark"
-              }
-              title={bookmarked ? "Bookmarked" : "Bookmark"}
-              className={`rounded-lg p-2 ${
-                bookmarked ? "text-indigo-500" : colors.control
-              }`}
-            >
-              <Bookmark
-                size={20}
-                fill={bookmarked ? "currentColor" : "none"}
-              />
-            </button>
-          </div>
-
-          <div className="mx-auto mt-3 max-w-5xl">
-            <div
-              className={`h-1 overflow-hidden rounded-full ${colors.track}`}
-            >
+            {/* Book spine shadow effect on the right edge of left page */}
+            {isTwoPage && (
               <div
-                className={`h-full rounded-full transition-all ${colors.progress}`}
-                style={{ width: `${progress}%` }}
+                className={`pointer-events-none absolute inset-y-0 right-0 w-8 bg-gradient-to-l ${colors.spine}`}
               />
-            </div>
-
-            <p className={`mt-1 text-right text-xs ${colors.muted}`}>
-              {progress}% read
-            </p>
+            )}
           </div>
-        </header>
 
-        {/* Book cover and title page */}
-        <section className="mx-auto max-w-5xl px-4 py-8 sm:px-8 lg:px-12">
-          <div
-            className={`mx-auto mb-10 flex min-h-[70vh] max-w-3xl flex-col items-center justify-center rounded-sm border px-6 py-12 text-center shadow-md sm:px-12 ${colors.paper}`}
-          >
-            {coverUrl && (
-              <img
-                src={coverUrl}
-                alt={`Cover of ${book.title}`}
-                className="mb-8 max-h-[360px] w-auto max-w-[240px] rounded-md object-contain shadow-xl"
+          {/* Right Page (Only in Two-Page view on wider screens) */}
+          {isTwoPage && (
+            <div className="relative hidden md:flex flex-1">
+              {/* Book spine shadow effect on the left edge of right page */}
+              <div
+                className={`pointer-events-none absolute inset-y-0 left-0 w-8 bg-gradient-to-r ${colors.spine}`}
               />
-            )}
+              {renderBookPage(currentPage + 1, "right")}
+            </div>
+          )}
 
-            {!coverUrl && (
-              <div className="mb-8 flex h-64 w-48 flex-col items-center justify-center border-4 border-double border-current/30 p-5">
-                <BookOpen
-                  size={42}
-                  className="mb-6 text-indigo-500"
-                />
-                <p className="text-lg font-bold">{book.title}</p>
+          {/* Hardcover Outer Spine Edge Shadow */}
+          <div className="pointer-events-none absolute inset-0 rounded-2xl ring-1 ring-inset ring-black/5" />
+        </div>
+
+        {/* Right page-turn navigation arrow */}
+        <button
+          onClick={handleNext}
+          disabled={currentPage >= totalPages - (isTwoPage ? 2 : 1)}
+          aria-label="Next Page"
+          className="absolute right-2 sm:right-4 z-20 flex h-12 w-12 items-center justify-center rounded-full bg-black/10 hover:bg-black/20 text-current backdrop-blur-sm transition disabled:opacity-0 disabled:pointer-events-none"
+        >
+          <ChevronRight size={28} />
+        </button>
+      </main>
+
+      {/* Bottom Progress Scrubber */}
+      <footer className={`border-t px-6 py-3 ${colors.toolbar} backdrop-blur-md`}>
+        <div className="mx-auto flex max-w-3xl items-center gap-4">
+          <span className="text-xs font-serif font-semibold whitespace-nowrap">
+            {currentPage + 1}
+            {isTwoPage && currentPage + 1 < totalPages ? `–${currentPage + 2}` : ""} of {totalPages}
+          </span>
+
+          {/* Page scrubber slider */}
+          <input
+            type="range"
+            min={0}
+            max={totalPages - 1}
+            step={isTwoPage ? 2 : 1}
+            value={currentPage}
+            onChange={(e) => goToPage(Number(e.target.value))}
+            className="h-1.5 w-full cursor-pointer appearance-none rounded-lg bg-black/10 accent-indigo-600 dark:bg-white/20"
+          />
+
+          <span className="text-xs font-semibold whitespace-nowrap opacity-60">
+            {progressPercentage}%
+          </span>
+        </div>
+      </footer>
+
+      {/* Reader Settings Drawer */}
+      {sidebarOpen && (
+        <div className="fixed inset-0 z-50 flex justify-end bg-black/40 backdrop-blur-sm">
+          <div className={`w-80 h-full p-6 shadow-2xl flex flex-col justify-between border-l ${colors.sidebar}`}>
+            <div>
+              <div className="flex items-center justify-between border-b pb-4 mb-6">
+                <h3 className="font-bold text-base flex items-center gap-2">
+                  <Settings2 size={18} />
+                  Reader Settings
+                </h3>
+                <button
+                  onClick={() => setSidebarOpen(false)}
+                  className="rounded-lg p-1.5 hover:bg-black/5 dark:hover:bg-white/10"
+                >
+                  <X size={18} />
+                </button>
               </div>
-            )}
 
-            <p
-              className={`text-xs font-semibold uppercase tracking-[0.25em] ${colors.muted}`}
-            >
-              Your reading space
-            </p>
+              {/* Theme Picker */}
+              <div className="mb-6">
+                <label className="text-xs font-bold uppercase tracking-wider mb-2.5 block opacity-60">
+                  Paper Tone
+                </label>
+                <div className="grid grid-cols-3 gap-2">
+                  <button
+                    onClick={() => setTheme("light")}
+                    className={`flex flex-col items-center gap-1.5 rounded-xl border p-3 transition ${
+                      theme === "light" ? "ring-2 ring-indigo-500 font-bold" : "border-slate-300"
+                    }`}
+                  >
+                    <Sun size={18} />
+                    <span className="text-xs">Linen</span>
+                  </button>
 
-            <h1 className="mt-5 max-w-2xl font-serif text-3xl font-bold leading-tight sm:text-4xl">
-              {book.title}
-            </h1>
+                  <button
+                    onClick={() => setTheme("sepia")}
+                    className={`flex flex-col items-center gap-1.5 rounded-xl border p-3 transition bg-[#F4E9D5] text-[#433022] ${
+                      theme === "sepia" ? "ring-2 ring-amber-700 font-bold" : "border-[#D6C4A5]"
+                    }`}
+                  >
+                    <Coffee size={18} />
+                    <span className="text-xs">Sepia</span>
+                  </button>
 
-            <p className={`mt-5 font-serif text-lg ${colors.muted}`}>
-              {book.authors
-                .map((author) => author.name)
-                .join(", ")}
-            </p>
+                  <button
+                    onClick={() => setTheme("dark")}
+                    className={`flex flex-col items-center gap-1.5 rounded-xl border p-3 transition bg-[#1C1E24] text-white ${
+                      theme === "dark" ? "ring-2 ring-indigo-400 font-bold" : "border-white/10"
+                    }`}
+                  >
+                    <Moon size={18} />
+                    <span className="text-xs">Velvet</span>
+                  </button>
+                </div>
+              </div>
 
-            {book.languages.length > 0 && (
-              <p className={`mt-3 text-sm ${colors.muted}`}>
-                Language: {book.languages.join(", ")}
-              </p>
-            )}
+              {/* Typography Font Picker */}
+              <div className="mb-6">
+                <label className="text-xs font-bold uppercase tracking-wider mb-2.5 block opacity-60">
+                  Typeface
+                </label>
+                <div className="grid grid-cols-3 gap-2">
+                  <button
+                    onClick={() => setFontFamily("serif")}
+                    className={`rounded-xl border p-2.5 text-xs font-serif transition ${
+                      fontFamily === "serif" ? "ring-2 ring-indigo-500 font-bold" : colors.control
+                    }`}
+                  >
+                    Classic Serif
+                  </button>
+                  <button
+                    onClick={() => setFontFamily("sans")}
+                    className={`rounded-xl border p-2.5 text-xs font-sans transition ${
+                      fontFamily === "sans" ? "ring-2 ring-indigo-500 font-bold" : colors.control
+                    }`}
+                  >
+                    Modern Sans
+                  </button>
+                  <button
+                    onClick={() => setFontFamily("mono")}
+                    className={`rounded-xl border p-2.5 text-xs font-mono transition ${
+                      fontFamily === "mono" ? "ring-2 ring-indigo-500 font-bold" : colors.control
+                    }`}
+                  >
+                    Typewriter
+                  </button>
+                </div>
+              </div>
+
+              {/* Font Size */}
+              <div className="mb-6">
+                <div className="flex items-center justify-between mb-2">
+                  <label className="text-xs font-bold uppercase tracking-wider opacity-60">
+                    Font Size
+                  </label>
+                  <span className="text-xs font-semibold">{fontSize}px</span>
+                </div>
+                <div className="flex items-center gap-3">
+                  <button
+                    onClick={() => setFontSize((s) => Math.max(13, s - 1))}
+                    className={`rounded-xl p-2.5 ${colors.control}`}
+                  >
+                    <Minus size={16} />
+                  </button>
+                  <div className="flex-1 text-center font-bold text-lg select-none">Aa</div>
+                  <button
+                    onClick={() => setFontSize((s) => Math.min(26, s + 1))}
+                    className={`rounded-xl p-2.5 ${colors.control}`}
+                  >
+                    <Plus size={16} />
+                  </button>
+                </div>
+              </div>
+
+              {/* Line Spacing */}
+              <div>
+                <label className="text-xs font-bold uppercase tracking-wider mb-2 block opacity-60">
+                  Line Spacing
+                </label>
+                <div className="grid grid-cols-3 gap-2">
+                  {[1.6, 1.85, 2.2].map((spacing) => (
+                    <button
+                      key={spacing}
+                      onClick={() => setLineHeight(spacing)}
+                      className={`rounded-xl border p-2 text-xs font-semibold ${
+                        lineHeight === spacing ? "ring-2 ring-indigo-500" : colors.control
+                      }`}
+                    >
+                      {spacing === 1.6 ? "Compact" : spacing === 1.85 ? "Book" : "Relaxed"}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </div>
 
             <button
-              onClick={continueReading}
-              className="mt-9 flex items-center gap-2 rounded-xl bg-indigo-600 px-6 py-3 text-sm font-medium text-white shadow-sm transition hover:bg-indigo-700"
+              onClick={() => setSidebarOpen(false)}
+              className="w-full rounded-xl bg-indigo-600 py-3 text-xs font-bold text-white shadow-md hover:bg-indigo-700 transition"
             >
-              <BookOpen size={18} />
-              Start reading
+              Done Reading
             </button>
           </div>
-
-          {/* Book text */}
-          <article
-            className={`mx-auto max-w-3xl rounded-sm border px-5 py-10 shadow-md sm:px-12 sm:py-14 lg:px-16 ${colors.paper}`}
-          >
-            <div className="mb-12 border-b border-current/10 pb-8 text-center">
-              <p
-                className={`text-xs uppercase tracking-[0.2em] ${colors.muted}`}
-              >
-                {book.title}
-              </p>
-
-              <h2 className="mt-4 font-serif text-2xl font-bold">
-                Begin reading
-              </h2>
-            </div>
-
-            <div
-              className="mx-auto max-w-[680px] break-words font-serif"
-              style={{
-                fontSize: `${fontSize}px`,
-                lineHeight,
-                textAlign: "justify",
-              }}
-            >
-              {paragraphs.map((paragraph, index) => {
-                const isHeading =
-                  paragraph.length < 100 &&
-                  (paragraph === paragraph.toUpperCase() ||
-                    /^(chapter|book|part|prologue|epilogue)\b/i.test(
-                      paragraph
-                    ));
-
-                if (isHeading) {
-                  return (
-                    <h3
-                      key={index}
-                      className="mb-8 mt-12 text-center font-serif text-xl font-bold"
-                    >
-                      {paragraph}
-                    </h3>
-                  );
-                }
-
-                return (
-                  <p
-                    key={index}
-                    className="mb-6 whitespace-pre-wrap indent-8"
-                  >
-                    {paragraph}
-                  </p>
-                );
-              })}
-            </div>
-
-            {/* Bottom reader controls */}
-            <div
-              className={`mt-14 flex items-center justify-between gap-3 border-t ${colors.border} pt-6`}
-            >
-              <button
-                onClick={goToStart}
-                className={`flex items-center gap-2 rounded-lg px-3 py-2 text-sm ${colors.control}`}
-              >
-                <ChevronLeft size={18} />
-                Back to start
-              </button>
-
-              <button
-                onClick={continueReading}
-                className="flex items-center gap-2 rounded-xl bg-indigo-600 px-4 py-2.5 text-sm font-medium text-white hover:bg-indigo-700"
-              >
-                Continue reading
-                <ChevronRight size={18} />
-              </button>
-            </div>
-          </article>
-        </section>
-      </div>
-    </main>
+        </div>
+      )}
+    </div>
   );
 }
