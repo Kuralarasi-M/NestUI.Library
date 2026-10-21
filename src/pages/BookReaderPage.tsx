@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState, useCallback } from "react";
+import { useEffect, useMemo, useState, useCallback, useRef } from "react";
 import {
   ArrowLeft,
   Bookmark,
@@ -15,9 +15,15 @@ import {
   Columns2,
   Square,
   Sparkles,
+  Smartphone,
+  BookOpen,
+  ZoomIn,
+  ZoomOut,
+  RotateCcw,
+  Download,
 } from "lucide-react";
 import { useNavigate, useParams } from "react-router-dom";
-import { getBookDetails } from "../services/bookService";
+import { getBookDetails, getBookContent, recordReading, recordDownload, downloadBookAsText } from "../services/bookService";
 import type { BookDetails } from "../services/bookService";
 import { useTheme } from "../hooks/useTheme";
 
@@ -89,6 +95,10 @@ export default function BookReaderPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
+  // Reader view modes: 'pdf' (full document with zoom/pan) vs 'mobile' (natural vertical reflow)
+  const [viewMode, setViewMode] = useState<"pdf" | "mobile">("pdf");
+  const [zoomLevel, setZoomLevel] = useState<number>(100);
+
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [fontSize, setFontSize] = useState(17);
   const [fontFamily, setFontFamily] = useState<"serif" | "sans" | "mono">("serif");
@@ -97,9 +107,15 @@ export default function BookReaderPage() {
   const [currentPage, setCurrentPage] = useState(0);
   const [bookmarked, setBookmarked] = useState(false);
 
+  // Pan state for PDF Document zoom mode
+  const [panPosition, setPanPosition] = useState({ x: 0, y: 0 });
+  const [isDragging, setIsDragging] = useState(false);
+  const dragStartRef = useRef({ x: 0, y: 0 });
+  const panStartRef = useRef({ x: 0, y: 0 });
+
   const colors = readerThemes[theme] || readerThemes.light;
 
-  // Load book details and Gutenberg text
+  // Load book metadata and on-demand content concurrently
   useEffect(() => {
     let cancelled = false;
 
@@ -116,16 +132,32 @@ export default function BookReaderPage() {
         setBook(null);
         setContent("");
 
-        const details = await getBookDetails(Number(gutendexId));
-        if (cancelled) return;
+        const bookId = Number(gutendexId);
 
+        // Fetch metadata first
+        const details = await getBookDetails(bookId);
+        if (cancelled) return;
         setBook(details);
 
-        if (!details.bookText?.trim()) {
+        // Fetch text from content endpoint, with graceful fallback to details.bookText
+        let text = details.bookText || "";
+        try {
+          const contentRes = await getBookContent(bookId);
+          if (contentRes?.bookText?.trim()) {
+            text = contentRes.bookText;
+          }
+        } catch {
+          // If content endpoint 404s (e.g. against older live deployments), rely on details.bookText
+        }
+
+        if (!text.trim()) {
           throw new Error("Book text is currently not available for reading.");
         }
 
-        setContent(details.bookText);
+        setContent(text);
+
+        // Record reading in history
+        recordReading(bookId);
 
         const savedBookmark = localStorage.getItem(`reader-bookmark-${gutendexId}`);
         setBookmarked(savedBookmark === "true");
@@ -158,7 +190,6 @@ export default function BookReaderPage() {
   const pages = useMemo(() => {
     if (!content) return [];
 
-    // Strip standard Gutenberg legal boilerplates for an authentic book feel
     let cleanText = content.replace(/\r\n/g, "\n");
     const startIdx = cleanText.search(/\*\*\* START OF (THE|THIS) PROJECT GUTENBERG EBOOK[^\*]*\*\*\*/i);
     if (startIdx !== -1) {
@@ -212,7 +243,8 @@ export default function BookReaderPage() {
     return pageList;
   }, [content]);
 
-  const totalPages = pages.length || 1;
+  // +2 pages for Cover Page (0) and Title Page (1)
+  const totalPages = (pages.length ? pages.length + 2 : 1);
 
   // Turn page safely and persist
   const goToPage = useCallback(
@@ -226,8 +258,8 @@ export default function BookReaderPage() {
     [totalPages, gutendexId]
   );
 
-  const prevStep = isTwoPage ? 2 : 1;
-  const nextStep = isTwoPage ? 2 : 1;
+  const prevStep = isTwoPage && viewMode === "pdf" ? 2 : 1;
+  const nextStep = isTwoPage && viewMode === "pdf" ? 2 : 1;
 
   const handlePrev = useCallback(() => {
     goToPage(currentPage - prevStep);
@@ -237,7 +269,7 @@ export default function BookReaderPage() {
     goToPage(currentPage + nextStep);
   }, [currentPage, nextStep, goToPage]);
 
-  // Keyboard navigation (ArrowLeft & ArrowRight)
+  // Keyboard navigation
   useEffect(() => {
     function handleKeyDown(e: KeyboardEvent) {
       if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) return;
@@ -254,6 +286,40 @@ export default function BookReaderPage() {
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [handlePrev, handleNext]);
 
+  // Zoom handlers for PDF-style view
+  function handleZoomIn() {
+    setZoomLevel((prev) => Math.min(250, prev + 25));
+  }
+  function handleZoomOut() {
+    setZoomLevel((prev) => Math.max(75, prev - 25));
+  }
+  function handleResetZoom() {
+    setZoomLevel(100);
+    setPanPosition({ x: 0, y: 0 });
+  }
+
+  // Mouse pan handlers when zoomed in
+  function handleMouseDown(e: React.MouseEvent) {
+    if (zoomLevel <= 100) return;
+    setIsDragging(true);
+    dragStartRef.current = { x: e.clientX, y: e.clientY };
+    panStartRef.current = { ...panPosition };
+  }
+
+  function handleMouseMove(e: React.MouseEvent) {
+    if (!isDragging) return;
+    const deltaX = e.clientX - dragStartRef.current.x;
+    const deltaY = e.clientY - dragStartRef.current.y;
+    setPanPosition({
+      x: panStartRef.current.x + deltaX,
+      y: panStartRef.current.y + deltaY,
+    });
+  }
+
+  function handleMouseUp() {
+    setIsDragging(false);
+  }
+
   function toggleBookmark() {
     const nextVal = !bookmarked;
     setBookmarked(nextVal);
@@ -264,14 +330,105 @@ export default function BookReaderPage() {
 
   const progressPercentage = Math.round(((currentPage + 1) / totalPages) * 100);
 
-  // Render an authentic book page
+  // Render a PDF-style structured page
   const renderBookPage = (pageIndex: number, _side: "left" | "right" | "single") => {
-    const pageContent = pages[pageIndex];
+    // PAGE 0: Realistic Book Cover (Front Cover)
+    if (pageIndex === 0) {
+      return (
+        <div className="relative flex h-full w-full flex-col items-center justify-between p-8 sm:p-12 overflow-hidden bg-gradient-to-br from-indigo-950 via-slate-900 to-slate-950 text-white rounded-l-2xl select-none">
+          {/* Subtle gold foil ornament borders */}
+          <div className="absolute inset-4 border border-amber-400/30 rounded-xl pointer-events-none" />
+          <div className="absolute inset-6 border border-amber-400/15 rounded-lg pointer-events-none" />
+
+          <div className="z-10 text-center pt-6">
+            <span className="text-[11px] font-mono tracking-[0.3em] uppercase text-amber-300/80">
+              Classic Library Edition
+            </span>
+          </div>
+
+          <div className="z-10 flex flex-col items-center text-center my-auto px-4 max-w-sm">
+            {book?.formats?.["image/jpeg"] ? (
+              <div className="relative mb-6 shadow-2xl rounded-lg overflow-hidden border border-white/20 max-w-[180px] max-h-[240px]">
+                <img
+                  src={book.formats["image/jpeg"]}
+                  alt={book.title}
+                  className="w-full h-full object-cover"
+                />
+              </div>
+            ) : (
+              <div className="mb-6 flex h-24 w-24 items-center justify-center rounded-2xl bg-amber-500/10 border border-amber-400/30 text-amber-300">
+                <BookOpen size={48} />
+              </div>
+            )}
+
+            <h1 className="text-2xl sm:text-3xl font-serif font-extrabold tracking-tight text-white mb-3 leading-tight drop-shadow-md">
+              {book?.title}
+            </h1>
+            <p className="text-sm font-serif italic text-amber-200/90 tracking-wide">
+              by {book?.authors?.map((a) => a.name).join(", ") || "Unknown Author"}
+            </p>
+          </div>
+
+          <div className="z-10 flex flex-col items-center pb-4 text-center">
+            <span className="text-[10px] font-mono tracking-widest text-slate-400 uppercase">
+              Project Gutenberg • Free Public Domain
+            </span>
+            <span className="text-[10px] text-amber-300/60 mt-1 font-serif">
+              Cover Page
+            </span>
+          </div>
+        </div>
+      );
+    }
+
+    // PAGE 1: Frontispiece / Title and Publication Info Page
+    if (pageIndex === 1) {
+      return (
+        <div className="relative flex h-full w-full flex-col justify-between p-8 sm:p-12 select-text text-center">
+          <div className="border-b border-current/10 pb-2 text-[10px] uppercase tracking-widest opacity-50">
+            Frontispiece
+          </div>
+
+          <div className="my-auto flex flex-col items-center max-w-md mx-auto space-y-4">
+            <h2 className="text-2xl sm:text-3xl font-serif font-bold tracking-wide">
+              {book?.title}
+            </h2>
+            <div className="w-12 h-0.5 bg-current opacity-30 my-2" />
+            <p className="text-sm font-serif italic">
+              {book?.authors?.map((a) => a.name).join(", ")}
+            </p>
+
+            {book?.summaries?.[0] && (
+              <div className="mt-6 p-4 rounded-xl bg-black/5 dark:bg-white/5 text-xs text-justify leading-relaxed opacity-80 max-h-48 overflow-y-auto">
+                <p className="font-serif italic">{book.summaries[0]}</p>
+              </div>
+            )}
+
+            <div className="mt-4 flex flex-wrap justify-center gap-1.5 text-[11px] opacity-70">
+              {book?.languages?.map((lang) => (
+                <span key={lang} className="px-2 py-0.5 rounded-full border border-current/20">
+                  {lang.toUpperCase()}
+                </span>
+              ))}
+              <span className="px-2 py-0.5 rounded-full border border-current/20">
+                {book?.download_Count?.toLocaleString()} Readers
+              </span>
+            </div>
+          </div>
+
+          <div className="border-t border-current/10 pt-2 text-[11px] font-serif opacity-50">
+            — Title Page —
+          </div>
+        </div>
+      );
+    }
+
+    // PAGES 2+: Main Body Text (pageIndex - 2 corresponds to pages array index)
+    const textPageIndex = pageIndex - 2;
+    const pageContent = pages[textPageIndex];
     if (!pageContent) {
       return (
-        <div
-          className={`flex h-full w-full flex-col items-center justify-center p-8 select-none ${colors.muted}`}
-        >
+        <div className={`flex h-full w-full flex-col items-center justify-center p-8 select-none ${colors.muted}`}>
           <Sparkles size={28} className="mb-3 opacity-30" />
           <p className="text-sm italic font-serif">End of Book</p>
         </div>
@@ -280,20 +437,14 @@ export default function BookReaderPage() {
 
     return (
       <div className="relative flex h-full flex-col justify-between p-7 sm:p-10 select-text">
-        {/* Header running head */}
         <div className="flex items-center justify-between border-b border-current/10 pb-2 text-[11px] uppercase tracking-widest opacity-60">
           <span className="truncate max-w-[200px]">{book?.title}</span>
           <span className="font-serif">Page {pageIndex + 1}</span>
         </div>
 
-        {/* Page text body */}
         <div
           className={`my-auto py-4 overflow-y-auto ${
-            fontFamily === "serif"
-              ? "font-serif"
-              : fontFamily === "mono"
-              ? "font-mono"
-              : "font-sans"
+            fontFamily === "serif" ? "font-serif" : fontFamily === "mono" ? "font-mono" : "font-sans"
           }`}
           style={{
             fontSize: `${fontSize}px`,
@@ -318,7 +469,6 @@ export default function BookReaderPage() {
               );
             }
 
-            // Drop cap for the very first letter of a chapter page
             const isFirstPara = idx === 0 || (idx === 1 && pageContent[0].length < 90);
 
             return (
@@ -338,9 +488,134 @@ export default function BookReaderPage() {
           })}
         </div>
 
-        {/* Footer with page number */}
         <div className="flex items-center justify-center pt-2 text-xs font-serif opacity-50">
           — {pageIndex + 1} —
+        </div>
+      </div>
+    );
+  };
+
+  // Render Mobile Reflow continuous view
+  const renderMobileView = () => {
+    if (currentPage === 0) {
+      return (
+        <div className="w-full max-w-xl mx-auto px-4 py-8 sm:px-6">
+          <div className="flex flex-col items-center text-center p-8 rounded-2xl bg-gradient-to-br from-indigo-950 via-slate-900 to-slate-950 text-white shadow-xl border border-white/10">
+            <span className="text-[10px] font-mono tracking-widest uppercase text-amber-300 mb-6">
+              Classic Library Edition
+            </span>
+            {book?.formats?.["image/jpeg"] && (
+              <img
+                src={book.formats["image/jpeg"]}
+                alt={book.title}
+                className="w-40 h-56 object-cover rounded-lg shadow-2xl mb-6 border border-white/20"
+              />
+            )}
+            <h1 className="text-2xl font-serif font-bold mb-2">{book?.title}</h1>
+            <p className="text-sm italic text-amber-200/90 mb-6">
+              {book?.authors?.map((a) => a.name).join(", ")}
+            </p>
+            <button
+              onClick={handleNext}
+              className="px-6 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-semibold transition shadow-md"
+            >
+              Start Reading &rarr;
+            </button>
+          </div>
+        </div>
+      );
+    }
+
+    if (currentPage === 1) {
+      return (
+        <div className="w-full max-w-xl mx-auto px-4 py-8 sm:px-6 text-center">
+          <div className="p-8 rounded-2xl border border-current/10 space-y-4">
+            <span className="text-[11px] uppercase tracking-widest opacity-60">Frontispiece</span>
+            <h2 className="text-2xl font-serif font-bold">{book?.title}</h2>
+            <p className="text-sm font-serif italic">{book?.authors?.map((a) => a.name).join(", ")}</p>
+            {book?.summaries?.[0] && (
+              <p className="text-xs text-justify leading-relaxed opacity-80 pt-4 border-t border-current/10">
+                {book.summaries[0]}
+              </p>
+            )}
+            <div className="pt-4 flex justify-between items-center">
+              <button
+                onClick={handlePrev}
+                className={`flex items-center gap-1 px-4 py-2 rounded-xl text-xs font-semibold ${colors.control}`}
+              >
+                &larr; Cover
+              </button>
+              <button
+                onClick={handleNext}
+                className="flex items-center gap-1 px-4 py-2 rounded-xl bg-indigo-600 text-white text-xs font-semibold"
+              >
+                Chapter 1 &rarr;
+              </button>
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    const textPageIndex = currentPage - 2;
+    const pageContent = pages[textPageIndex];
+    if (!pageContent) return null;
+
+    return (
+      <div className="w-full max-w-xl mx-auto px-4 py-6 sm:px-6">
+        <div className="flex items-center justify-between border-b border-current/10 pb-2 mb-4 text-xs opacity-60">
+          <span className="truncate max-w-[220px] font-bold">{book?.title}</span>
+          <span className="font-serif font-semibold">Page {currentPage + 1} / {totalPages}</span>
+        </div>
+
+        <div
+          className={`${
+            fontFamily === "serif" ? "font-serif" : fontFamily === "mono" ? "font-mono" : "font-sans"
+          }`}
+          style={{
+            fontSize: `${fontSize}px`,
+            lineHeight,
+          }}
+        >
+          {pageContent.map((paragraph, idx) => {
+            const isHeading =
+              paragraph.length < 90 &&
+              (/^(chapter|book|act|scene|part|prologue|epilogue)\b/i.test(paragraph) ||
+                paragraph === paragraph.toUpperCase());
+
+            if (isHeading) {
+              return (
+                <h2 key={idx} className={`my-5 text-center text-lg font-bold uppercase ${colors.chapterHeading}`}>
+                  {paragraph}
+                </h2>
+              );
+            }
+
+            return (
+              <p key={idx} className="mb-4 text-left leading-relaxed">
+                {paragraph}
+              </p>
+            );
+          })}
+        </div>
+
+        {/* Quick mobile page turner taps */}
+        <div className="flex items-center justify-between pt-6 mt-6 border-t border-current/10">
+          <button
+            onClick={handlePrev}
+            disabled={currentPage === 0}
+            className={`flex items-center gap-1.5 px-4 py-2 rounded-xl text-sm font-semibold transition ${colors.control} disabled:opacity-30`}
+          >
+            <ChevronLeft size={16} /> Prev Page
+          </button>
+          <span className="text-xs opacity-60 font-serif">Page {currentPage + 1}</span>
+          <button
+            onClick={handleNext}
+            disabled={currentPage >= totalPages - 1}
+            className={`flex items-center gap-1.5 px-4 py-2 rounded-xl text-sm font-semibold transition ${colors.control} disabled:opacity-30`}
+          >
+            Next Page <ChevronRight size={16} />
+          </button>
         </div>
       </div>
     );
@@ -350,7 +625,7 @@ export default function BookReaderPage() {
     return (
       <div className={`flex min-h-screen flex-col items-center justify-center ${colors.bg}`}>
         <LoaderCircle size={36} className="animate-spin text-indigo-600 mb-3" />
-        <p className="font-serif text-sm">Turning to your page...</p>
+        <p className="font-serif text-sm">Opening book content...</p>
       </div>
     );
   }
@@ -373,35 +648,113 @@ export default function BookReaderPage() {
     <div className={`relative flex min-h-screen flex-col ${colors.bg} ${colors.text} transition-colors duration-300`}>
       {/* Top Reading Toolbar */}
       <header
-        className={`sticky top-0 z-30 flex items-center justify-between border-b px-4 py-3 backdrop-blur-md shadow-sm sm:px-8 ${colors.toolbar}`}
+        className={`sticky top-0 z-30 flex items-center justify-between border-b px-3 py-2.5 backdrop-blur-md shadow-sm sm:px-8 ${colors.toolbar}`}
       >
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2 sm:gap-3">
           <button
             onClick={() => navigate(`/books/${gutendexId}`)}
-            className={`flex items-center gap-2 rounded-xl p-2 text-sm font-medium transition ${colors.control}`}
+            className={`flex items-center gap-1.5 rounded-xl p-2 text-sm font-medium transition ${colors.control}`}
             title="Back to Book Details"
           >
             <ArrowLeft size={18} />
             <span className="hidden sm:inline">Details</span>
           </button>
 
-          <div className="max-w-[200px] sm:max-w-md truncate">
-            <h1 className="truncate text-sm font-bold font-serif">{book.title}</h1>
-            <p className={`truncate text-xs ${colors.muted}`}>
+          <div className="max-w-[150px] sm:max-w-md truncate">
+            <h1 className="truncate text-xs sm:text-sm font-bold font-serif">{book.title}</h1>
+            <p className={`truncate text-[11px] sm:text-xs ${colors.muted}`}>
               {book.authors.map((a) => a.name).join(", ")}
             </p>
           </div>
         </div>
 
-        {/* Action icons */}
-        <div className="flex items-center gap-2">
-          {/* Two-page / Single-page toggle (on desktop) */}
+        {/* View Mode Toggle Pill (PDF/Document vs. Mobile Reflow) */}
+        <div className="flex items-center gap-1 bg-black/5 dark:bg-white/10 p-1 rounded-xl">
           <button
-            onClick={() => setIsTwoPage(!isTwoPage)}
-            className={`hidden lg:flex items-center gap-1 rounded-xl p-2 text-xs font-semibold ${colors.control}`}
-            title={isTwoPage ? "Switch to Single Page" : "Switch to Two-Page Spread"}
+            onClick={() => {
+              setViewMode("pdf");
+              setZoomLevel(100);
+              setPanPosition({ x: 0, y: 0 });
+            }}
+            className={`flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-semibold transition ${
+              viewMode === "pdf" ? "bg-indigo-600 text-white shadow-sm" : "opacity-75 hover:opacity-100"
+            }`}
+            title="PDF Document Mode (Pinch/Zoom & Spreads)"
           >
-            {isTwoPage ? <Columns2 size={18} /> : <Square size={18} />}
+            <BookOpen size={14} />
+            <span className="hidden sm:inline">Page Mode</span>
+          </button>
+
+          <button
+            onClick={() => setViewMode("mobile")}
+            className={`flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-semibold transition ${
+              viewMode === "mobile" ? "bg-indigo-600 text-white shadow-sm" : "opacity-75 hover:opacity-100"
+            }`}
+            title="Mobile Reflow Mode (Natural Screen Fit)"
+          >
+            <Smartphone size={14} />
+            <span>Mobile View</span>
+          </button>
+        </div>
+
+        {/* Action icons */}
+        <div className="flex items-center gap-1.5 sm:gap-2">
+          {/* Zoom controls (Only in PDF Document Mode) */}
+          {viewMode === "pdf" && (
+            <div className="hidden sm:flex items-center gap-1 bg-black/5 dark:bg-white/10 p-1 rounded-xl text-xs">
+              <button
+                onClick={handleZoomOut}
+                disabled={zoomLevel <= 75}
+                className="p-1 hover:opacity-80 disabled:opacity-30"
+                title="Zoom Out"
+              >
+                <ZoomOut size={15} />
+              </button>
+              <span className="px-1 font-mono text-[11px] font-semibold">{zoomLevel}%</span>
+              <button
+                onClick={handleZoomIn}
+                disabled={zoomLevel >= 250}
+                className="p-1 hover:opacity-80 disabled:opacity-30"
+                title="Zoom In"
+              >
+                <ZoomIn size={15} />
+              </button>
+              {zoomLevel !== 100 && (
+                <button
+                  onClick={handleResetZoom}
+                  className="p-1 hover:opacity-80 text-indigo-500"
+                  title="Reset Zoom"
+                >
+                  <RotateCcw size={13} />
+                </button>
+              )}
+            </div>
+          )}
+
+          {/* Two-page / Single-page toggle (on desktop) */}
+          {viewMode === "pdf" && (
+            <button
+              onClick={() => setIsTwoPage(!isTwoPage)}
+              className={`hidden lg:flex items-center gap-1 rounded-xl p-2 text-xs font-semibold ${colors.control}`}
+              title={isTwoPage ? "Switch to Single Page" : "Switch to Two-Page Spread"}
+            >
+              {isTwoPage ? <Columns2 size={16} /> : <Square size={16} />}
+            </button>
+          )}
+
+          {/* Download Text / Book */}
+          <button
+            onClick={() => {
+              if (book && content) {
+                downloadBookAsText(book.title, content);
+                recordDownload(book.id || Number(gutendexId));
+              }
+            }}
+            className={`flex items-center gap-1 rounded-xl p-2 text-xs font-semibold transition ${colors.control}`}
+            title="Download Book (.txt)"
+          >
+            <Download size={16} />
+            <span className="hidden md:inline">Download</span>
           </button>
 
           {/* Bookmark */}
@@ -412,88 +765,105 @@ export default function BookReaderPage() {
             }`}
             title={bookmarked ? "Bookmarked" : "Add Bookmark"}
           >
-            <Bookmark size={18} fill={bookmarked ? "currentColor" : "none"} />
+            <Bookmark size={16} fill={bookmarked ? "currentColor" : "none"} />
           </button>
 
           {/* Settings button */}
           <button
             onClick={() => setSidebarOpen(true)}
-            className={`flex items-center gap-1.5 rounded-xl px-3 py-2 text-xs font-semibold transition ${colors.control}`}
+            className={`flex items-center gap-1 rounded-xl px-2.5 py-2 text-xs font-semibold transition ${colors.control}`}
           >
-            <Settings2 size={16} />
-            <span>Aa</span>
+            <Settings2 size={15} />
+            <span className="hidden sm:inline">Aa</span>
           </button>
         </div>
       </header>
 
       {/* Main Reading Stage */}
-      <main className="relative flex flex-1 items-center justify-center p-3 sm:p-6 lg:p-8">
-        {/* Left page-turn navigation arrow */}
-        <button
-          onClick={handlePrev}
-          disabled={currentPage === 0}
-          aria-label="Previous Page"
-          className="absolute left-2 sm:left-4 z-20 flex h-12 w-12 items-center justify-center rounded-full bg-black/10 hover:bg-black/20 text-current backdrop-blur-sm transition disabled:opacity-0 disabled:pointer-events-none"
+      {viewMode === "mobile" ? (
+        // MOBILE REFLOW MODE
+        <main className="flex-1 overflow-y-auto">{renderMobileView()}</main>
+      ) : (
+        // PDF DOCUMENT / PAGE SPREAD MODE WITH ZOOM & PAN
+        <main
+          className={`relative flex flex-1 items-center justify-center p-3 sm:p-6 lg:p-8 overflow-hidden select-none ${
+            zoomLevel > 100 ? (isDragging ? "cursor-grabbing" : "cursor-grab") : ""
+          }`}
+          onMouseDown={handleMouseDown}
+          onMouseMove={handleMouseMove}
+          onMouseUp={handleMouseUp}
+          onMouseLeave={handleMouseUp}
         >
-          <ChevronLeft size={28} />
-        </button>
+          {/* Left page navigation arrow */}
+          <button
+            onClick={handlePrev}
+            disabled={currentPage === 0}
+            aria-label="Previous Page"
+            className="absolute left-2 sm:left-4 z-20 flex h-11 w-11 items-center justify-center rounded-full bg-black/10 hover:bg-black/20 text-current backdrop-blur-sm transition disabled:opacity-0 disabled:pointer-events-none"
+          >
+            <ChevronLeft size={24} />
+          </button>
 
-        {/* Realistic Book Mockup Container */}
-        <div
-          className={`relative flex w-full max-w-5xl rounded-2xl border ${colors.bookBorder} ${colors.bookBg} ${colors.bookShadow} min-h-[75vh] max-h-[85vh] overflow-hidden transition-all duration-300`}
-        >
-          {/* Left Page */}
-          <div className={`relative flex-1 ${isTwoPage ? "border-r" : ""} ${colors.centerCrease}`}>
-            {renderBookPage(currentPage, isTwoPage ? "left" : "single")}
+          {/* Realistic PDF Book Container with dynamic scale & pan */}
+          <div
+            style={{
+              transform: `scale(${zoomLevel / 100}) translate(${panPosition.x / (zoomLevel / 100)}px, ${
+                panPosition.y / (zoomLevel / 100)
+              }px)`,
+              transformOrigin: "center center",
+              transition: isDragging ? "none" : "transform 0.15s ease-out",
+            }}
+            className={`relative flex w-full max-w-5xl rounded-2xl border ${colors.bookBorder} ${colors.bookBg} ${colors.bookShadow} min-h-[75vh] max-h-[85vh] overflow-hidden`}
+          >
+            {/* Left Page */}
+            <div className={`relative flex-1 ${isTwoPage ? "border-r" : ""} ${colors.centerCrease}`}>
+              {renderBookPage(currentPage, isTwoPage ? "left" : "single")}
 
-            {/* Book spine shadow effect on the right edge of left page */}
+              {isTwoPage && (
+                <div
+                  className={`pointer-events-none absolute inset-y-0 right-0 w-8 bg-gradient-to-l ${colors.spine}`}
+                />
+              )}
+            </div>
+
+            {/* Right Page (Only in Two-Page view on wider screens) */}
             {isTwoPage && (
-              <div
-                className={`pointer-events-none absolute inset-y-0 right-0 w-8 bg-gradient-to-l ${colors.spine}`}
-              />
+              <div className="relative hidden md:flex flex-1">
+                <div
+                  className={`pointer-events-none absolute inset-y-0 left-0 w-8 bg-gradient-to-r ${colors.spine}`}
+                />
+                {renderBookPage(currentPage + 1, "right")}
+              </div>
             )}
+
+            <div className="pointer-events-none absolute inset-0 rounded-2xl ring-1 ring-inset ring-black/5" />
           </div>
 
-          {/* Right Page (Only in Two-Page view on wider screens) */}
-          {isTwoPage && (
-            <div className="relative hidden md:flex flex-1">
-              {/* Book spine shadow effect on the left edge of right page */}
-              <div
-                className={`pointer-events-none absolute inset-y-0 left-0 w-8 bg-gradient-to-r ${colors.spine}`}
-              />
-              {renderBookPage(currentPage + 1, "right")}
-            </div>
-          )}
-
-          {/* Hardcover Outer Spine Edge Shadow */}
-          <div className="pointer-events-none absolute inset-0 rounded-2xl ring-1 ring-inset ring-black/5" />
-        </div>
-
-        {/* Right page-turn navigation arrow */}
-        <button
-          onClick={handleNext}
-          disabled={currentPage >= totalPages - (isTwoPage ? 2 : 1)}
-          aria-label="Next Page"
-          className="absolute right-2 sm:right-4 z-20 flex h-12 w-12 items-center justify-center rounded-full bg-black/10 hover:bg-black/20 text-current backdrop-blur-sm transition disabled:opacity-0 disabled:pointer-events-none"
-        >
-          <ChevronRight size={28} />
-        </button>
-      </main>
+          {/* Right page navigation arrow */}
+          <button
+            onClick={handleNext}
+            disabled={currentPage >= totalPages - (isTwoPage ? 2 : 1)}
+            aria-label="Next Page"
+            className="absolute right-2 sm:right-4 z-20 flex h-11 w-11 items-center justify-center rounded-full bg-black/10 hover:bg-black/20 text-current backdrop-blur-sm transition disabled:opacity-0 disabled:pointer-events-none"
+          >
+            <ChevronRight size={24} />
+          </button>
+        </main>
+      )}
 
       {/* Bottom Progress Scrubber */}
-      <footer className={`border-t px-6 py-3 ${colors.toolbar} backdrop-blur-md`}>
-        <div className="mx-auto flex max-w-3xl items-center gap-4">
+      <footer className={`border-t px-4 py-2.5 ${colors.toolbar} backdrop-blur-md`}>
+        <div className="mx-auto flex max-w-3xl items-center gap-3">
           <span className="text-xs font-serif font-semibold whitespace-nowrap">
             {currentPage + 1}
-            {isTwoPage && currentPage + 1 < totalPages ? `–${currentPage + 2}` : ""} of {totalPages}
+            {isTwoPage && viewMode === "pdf" && currentPage + 1 < totalPages ? `–${currentPage + 2}` : ""} of {totalPages}
           </span>
 
-          {/* Page scrubber slider */}
           <input
             type="range"
             min={0}
             max={totalPages - 1}
-            step={isTwoPage ? 2 : 1}
+            step={isTwoPage && viewMode === "pdf" ? 2 : 1}
             value={currentPage}
             onChange={(e) => goToPage(Number(e.target.value))}
             className="h-1.5 w-full cursor-pointer appearance-none rounded-lg bg-black/10 accent-indigo-600 dark:bg-white/20"
@@ -521,6 +891,31 @@ export default function BookReaderPage() {
                 >
                   <X size={18} />
                 </button>
+              </div>
+
+              {/* View Mode in Settings */}
+              <div className="mb-6">
+                <label className="text-xs font-bold uppercase tracking-wider mb-2.5 block opacity-60">
+                  Layout Style
+                </label>
+                <div className="grid grid-cols-2 gap-2">
+                  <button
+                    onClick={() => setViewMode("pdf")}
+                    className={`flex items-center justify-center gap-2 p-2.5 rounded-xl border text-xs font-semibold transition ${
+                      viewMode === "pdf" ? "ring-2 ring-indigo-500 font-bold" : colors.control
+                    }`}
+                  >
+                    <BookOpen size={16} /> Page Mode
+                  </button>
+                  <button
+                    onClick={() => setViewMode("mobile")}
+                    className={`flex items-center justify-center gap-2 p-2.5 rounded-xl border text-xs font-semibold transition ${
+                      viewMode === "mobile" ? "ring-2 ring-indigo-500 font-bold" : colors.control
+                    }`}
+                  >
+                    <Smartphone size={16} /> Mobile View
+                  </button>
+                </div>
               </div>
 
               {/* Theme Picker */}

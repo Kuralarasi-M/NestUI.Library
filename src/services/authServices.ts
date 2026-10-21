@@ -18,14 +18,14 @@ export interface LoginResponse {
   message: string;
   token?: string;
   role?: string;
-  userId?: number;
+  userId?: string;
 }
 
 export interface RegisterResponse {
   success?: boolean;
   message: string;
   role?: string;
-  userId?: number;
+  userId?: string;
 }
 
 const AUTH_USER_KEY = "library_user";
@@ -75,8 +75,10 @@ async function sendAuthRequest<T>(
     let errorMessage = `Request failed (${response.status})`;
     if (result && typeof result === "object" && result.message) {
       errorMessage = result.message;
-    } else if (typeof result === "string") {
+    } else if (typeof result === "string" && !result.includes("System.") && !result.includes("<html")) {
       errorMessage = result;
+    } else {
+      errorMessage = "Invalid credentials or service temporarily unavailable. Please try again.";
     }
     throw new Error(errorMessage);
   }

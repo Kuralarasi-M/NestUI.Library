@@ -5,9 +5,11 @@ import type { Book } from "../services/bookService";
 
 interface BookCardProps {
   book: Book;
+  isFavorite?: boolean;
+  onToggleFavorite?: (bookId: number) => void;
 }
 
-export default function BookCard({ book }: BookCardProps) {
+export default function BookCard({ book, isFavorite = false, onToggleFavorite }: BookCardProps) {
   const navigate = useNavigate();
 
   return (
@@ -34,7 +36,21 @@ export default function BookCard({ book }: BookCardProps) {
       <div className="p-4">
         <div className="flex items-start justify-between gap-2">
           <h3 className="line-clamp-2 font-semibold">{book.title}</h3>
-          <Heart size={18} className="shrink-0 text-slate-400" />
+          <button
+            type="button"
+            aria-label={isFavorite ? "Remove from favorites" : "Add to favorites"}
+            onClick={(e) => {
+              e.stopPropagation();
+              onToggleFavorite?.(book.id);
+            }}
+            className={`shrink-0 p-1.5 rounded-full transition ${
+              isFavorite
+                ? "text-rose-500 bg-rose-50 dark:bg-rose-950/40"
+                : "text-slate-400 hover:text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-950/30"
+            }`}
+          >
+            <Heart size={18} fill={isFavorite ? "currentColor" : "none"} />
+          </button>
         </div>
 
         <p className="mt-2 truncate text-sm text-slate-500 dark:text-slate-400">

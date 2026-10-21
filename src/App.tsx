@@ -53,6 +53,11 @@ function NotFoundRoute() {
   return <NotFoundPage onOpenMenu={onOpenMenu} />;
 }
 
+import FavoritesPage from "./pages/FavoritesPage";
+import HistoryPage from "./pages/HistoryPage";
+import SearchHistoryPage from "./pages/SearchHistoryPage";
+import DiscoverPage from "./pages/DiscoverPage";
+
 export default function App() {
   return (
     <BrowserRouter>
@@ -63,6 +68,10 @@ export default function App() {
         {/* Pages with the regular sidebar */}
         <Route element={<LibraryLayout />}>
           <Route path="/" element={<DashboardRoute />} />
+          <Route path="/discover" element={<DiscoverPage />} />
+          <Route path="/favorites" element={<FavoritesPage />} />
+          <Route path="/history" element={<HistoryPage />} />
+          <Route path="/search-history" element={<SearchHistoryPage />} />
           <Route path="/books/:gutendexId" element={<BookDetailsPage />} />
           <Route path="*" element={<NotFoundRoute />} />
         </Route>

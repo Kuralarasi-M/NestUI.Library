@@ -103,9 +103,9 @@ export default function Sidebar({ open, onClose }: SidebarProps) {
         <div className="mt-auto space-y-3">
           <div className="rounded-xl bg-indigo-50 p-4 dark:bg-indigo-500/10">
             <BookOpen className="mb-2 text-indigo-600 dark:text-indigo-400" />
-            <p className="text-sm font-semibold">Your next chapter awaits.</p>
-            <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
-              Discover a new book today.
+            <p className="text-sm font-semibold">Public Domain Library</p>
+            <p className="mt-1 text-xs text-slate-500 dark:text-slate-400 leading-relaxed">
+              Non-copyright public domain books alone are available here to read.
             </p>
           </div>
 

@@ -2,7 +2,7 @@
 import { useEffect, useState } from "react";
 import { ArrowLeft, BookOpen, Download, LoaderCircle } from "lucide-react";
 import { useNavigate, useParams } from "react-router-dom";
-import { getBookDetails } from "../services/bookService";
+import { getBookDetails, recordDownload } from "../services/bookService";
 import type { BookDetails } from "../services/bookService";
 
 export default function BookDetailsPage() {
@@ -69,11 +69,11 @@ export default function BookDetailsPage() {
     return (
       <main className="min-h-screen bg-slate-50 p-8 dark:bg-gray-950">
         <button
-          onClick={() => navigate(-1)}
+          onClick={() => navigate("/")}
           className="mb-5 flex items-center gap-2 text-indigo-600 dark:text-indigo-400"
         >
           <ArrowLeft size={18} />
-          Go back
+          Back to library
         </button>
 
         <p role="alert" className="text-red-600 dark:text-red-400">
@@ -86,10 +86,10 @@ export default function BookDetailsPage() {
   const coverUrl = book.formats?.["image/jpeg"];
 
   const hasReadableEdition = Boolean(
-    book.bookText ||
-      book.formats?.["text/html"] ||
+    book.formats?.["text/html"] ||
       book.formats?.["text/plain; charset=utf-8"] ||
-      book.formats?.["text/plain"]
+      book.formats?.["text/plain"] ||
+      true
   );
 
   function openReader() {
@@ -103,7 +103,7 @@ export default function BookDetailsPage() {
     <main className="min-h-screen bg-slate-50 p-4 text-slate-900 dark:bg-gray-950 dark:text-white sm:p-8">
       <div className="mx-auto max-w-5xl">
         <button
-          onClick={() => navigate(-1)}
+          onClick={() => navigate("/")}
           className="mb-8 flex items-center gap-2 text-sm text-indigo-600 dark:text-indigo-400"
         >
           <ArrowLeft size={18} />
@@ -177,37 +177,65 @@ export default function BookDetailsPage() {
               ))}
             </div>
 
-            {hasReadableEdition ? (
-              <button
-                type="button"
-                onClick={openReader}
-                className="mt-8 inline-flex items-center gap-2 rounded-xl bg-indigo-600 px-5 py-3 font-medium text-white transition hover:bg-indigo-700"
-              >
-                <BookOpen size={18} />
-                Read Book
-              </button>
-            ) : (
-              <p className="mt-8 text-sm text-slate-500 dark:text-slate-400">
-                An online reading edition is not available for this book.
-              </p>
-            )}
+            <div className="mt-8 flex flex-wrap gap-3 items-center">
+              {hasReadableEdition ? (
+                <button
+                  type="button"
+                  onClick={openReader}
+                  className="inline-flex items-center gap-2 rounded-xl bg-indigo-600 px-6 py-3 font-semibold text-white shadow transition hover:bg-indigo-700"
+                >
+                  <BookOpen size={18} />
+                  Read Book
+                </button>
+              ) : (
+                <p className="text-sm text-slate-500 dark:text-slate-400">
+                  An online reading edition is not available for this book.
+                </p>
+              )}
 
-            {book.formats["text/html"] && (
-              <button
-                type="button"
-                onClick={() =>
-                  window.open(
-                    book.formats["text/html"],
-                    "_blank",
-                    "noopener,noreferrer"
-                  )
-                }
-                className="ml-3 mt-8 inline-flex items-center gap-2 rounded-xl border border-slate-300 px-5 py-3 font-medium transition hover:bg-slate-100 dark:border-white/20 dark:hover:bg-white/10"
-              >
-                <Download size={18} />
-                Gutenberg Edition
-              </button>
-            )}
+              {/* EPUB Download */}
+              {book.formats["application/epub+zip"] && (
+                <a
+                  href={book.formats["application/epub+zip"]}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  onClick={() => recordDownload(book.id || Number(gutendexId))}
+                  className="inline-flex items-center gap-2 rounded-xl border border-indigo-200 bg-indigo-50 px-5 py-3 font-medium text-indigo-700 transition hover:bg-indigo-100 dark:border-indigo-500/20 dark:bg-indigo-500/10 dark:text-indigo-300"
+                >
+                  <Download size={18} />
+                  Download EPUB
+                </a>
+              )}
+
+              {/* TXT Download */}
+              {(book.formats["text/plain; charset=utf-8"] || book.formats["text/plain"]) && (
+                <a
+                  href={book.formats["text/plain; charset=utf-8"] || book.formats["text/plain"]}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  onClick={() => recordDownload(book.id || Number(gutendexId))}
+                  className="inline-flex items-center gap-2 rounded-xl border border-slate-300 px-5 py-3 font-medium transition hover:bg-slate-100 dark:border-white/20 dark:hover:bg-white/10"
+                >
+                  <Download size={18} />
+                  Download Text
+                </a>
+              )}
+
+              {/* Gutenberg HTML Edition */}
+              {book.formats["text/html"] && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    recordDownload(book.id || Number(gutendexId));
+                    window.open(book.formats["text/html"], "_blank", "noopener,noreferrer");
+                  }}
+                  className="inline-flex items-center gap-2 rounded-xl border border-slate-300 px-4 py-3 text-sm font-medium transition hover:bg-slate-100 dark:border-white/20 dark:hover:bg-white/10 opacity-75 hover:opacity-100"
+                >
+                  <Download size={16} />
+                  Gutenberg HTML
+                </button>
+              )}
+            </div>
           </section>
         </div>
       </div>
