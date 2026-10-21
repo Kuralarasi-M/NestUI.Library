@@ -21,6 +21,11 @@ import {
   ZoomOut,
   RotateCcw,
   Download,
+  ExternalLink,
+  ChevronDown,
+  BookMarked,
+  Globe,
+  FileText,
 } from "lucide-react";
 import { useNavigate, useParams } from "react-router-dom";
 import { getBookDetails, getBookContent, recordReading, recordDownload, downloadBookAsText } from "../services/bookService";
@@ -106,6 +111,19 @@ export default function BookReaderPage() {
   const [isTwoPage, setIsTwoPage] = useState(true);
   const [currentPage, setCurrentPage] = useState(0);
   const [bookmarked, setBookmarked] = useState(false);
+  const [downloadOpen, setDownloadOpen] = useState(false);
+  const downloadRef = useRef<HTMLDivElement>(null);
+
+  // Close download dropdown when clicking outside
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (downloadRef.current && !downloadRef.current.contains(event.target as Node)) {
+        setDownloadOpen(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
 
   // Pan state for PDF Document zoom mode
   const [panPosition, setPanPosition] = useState({ x: 0, y: 0 });
@@ -742,19 +760,119 @@ export default function BookReaderPage() {
             </button>
           )}
 
-          {/* Download Text / Book */}
+          {/* Download Dropdown */}
+          <div className="relative" ref={downloadRef}>
+            <button
+              onClick={() => setDownloadOpen(!downloadOpen)}
+              className={`flex items-center gap-1 rounded-xl px-2.5 py-1.5 text-xs font-semibold transition ${colors.control}`}
+              title="Download Options"
+            >
+              <Download size={15} />
+              <span className="hidden md:inline">Download</span>
+              <ChevronDown
+                size={13}
+                className={`transition-transform duration-200 ${downloadOpen ? "rotate-180" : ""}`}
+              />
+            </button>
+
+            {downloadOpen && (
+              <div
+                className={`absolute right-0 mt-2 w-56 rounded-xl border p-1.5 shadow-2xl z-50 ${
+                  theme === "dark"
+                    ? "bg-gray-900 border-white/10 text-white"
+                    : "bg-white border-slate-200 text-slate-800"
+                }`}
+              >
+                <div className="px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider opacity-60">
+                  Download Book
+                </div>
+
+                {/* EPUB Option */}
+                <button
+                  type="button"
+                  onClick={() => {
+                    const epubUrl =
+                      book.formats?.["application/epub+zip"] ||
+                      `https://www.gutenberg.org/ebooks/${gutendexId}.epub.images`;
+                    recordDownload(book.id || Number(gutendexId));
+                    window.open(epubUrl, "_blank", "noopener,noreferrer");
+                    setDownloadOpen(false);
+                  }}
+                  className="w-full flex items-center gap-2 rounded-lg px-2.5 py-2 text-xs font-medium hover:bg-indigo-500/10 text-left transition"
+                >
+                  <BookMarked size={15} className="text-indigo-500 shrink-0" />
+                  <div>
+                    <div className="font-semibold">EPUB E-Book</div>
+                    <div className="text-[10px] opacity-60">For e-readers & mobile apps</div>
+                  </div>
+                </button>
+
+                {/* Plain Text (.txt) */}
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (content) {
+                      downloadBookAsText(book.title, content);
+                    } else {
+                      const textUrl =
+                        book.formats?.["text/plain; charset=utf-8"] ||
+                        book.formats?.["text/plain"] ||
+                        `https://www.gutenberg.org/ebooks/${gutendexId}.txt.utf-8`;
+                      window.open(textUrl, "_blank", "noopener,noreferrer");
+                    }
+                    recordDownload(book.id || Number(gutendexId));
+                    setDownloadOpen(false);
+                  }}
+                  className="w-full flex items-center gap-2 rounded-lg px-2.5 py-2 text-xs font-medium hover:bg-indigo-500/10 text-left transition"
+                >
+                  <FileText size={15} className="text-emerald-500 shrink-0" />
+                  <div>
+                    <div className="font-semibold">Plain Text (.txt)</div>
+                    <div className="text-[10px] opacity-60">Complete offline text file</div>
+                  </div>
+                </button>
+
+                {/* HTML Archive */}
+                <button
+                  type="button"
+                  onClick={() => {
+                    const archiveUrl =
+                      book.formats?.["text/html"] ||
+                      book.formats?.["text/html; charset=utf-8"] ||
+                      book.formats?.["text/html; charset=iso-8859-1"] ||
+                      `https://www.gutenberg.org/ebooks/${gutendexId}`;
+                    recordDownload(book.id || Number(gutendexId));
+                    window.open(archiveUrl, "_blank", "noopener,noreferrer");
+                    setDownloadOpen(false);
+                  }}
+                  className="w-full flex items-center gap-2 rounded-lg px-2.5 py-2 text-xs font-medium hover:bg-indigo-500/10 text-left transition border-t border-current/10 mt-1 pt-1.5"
+                >
+                  <Globe size={15} className="text-amber-500 shrink-0" />
+                  <div>
+                    <div className="font-semibold">Original HTML Archive</div>
+                    <div className="text-[10px] opacity-60">Historical Gutenberg page</div>
+                  </div>
+                </button>
+              </div>
+            )}
+          </div>
+
+          {/* Original Gutenberg Archive Edition in New Tab */}
           <button
             onClick={() => {
-              if (book && content) {
-                downloadBookAsText(book.title, content);
-                recordDownload(book.id || Number(gutendexId));
-              }
+              const archiveUrl =
+                book.formats?.["text/html"] ||
+                book.formats?.["text/html; charset=utf-8"] ||
+                book.formats?.["text/html; charset=iso-8859-1"] ||
+                `https://www.gutenberg.org/ebooks/${gutendexId}`;
+              recordDownload(book.id || Number(gutendexId));
+              window.open(archiveUrl, "_blank", "noopener,noreferrer");
             }}
-            className={`flex items-center gap-1 rounded-xl p-2 text-xs font-semibold transition ${colors.control}`}
-            title="Download Book (.txt)"
+            className={`flex items-center gap-1 rounded-xl px-2.5 py-2 text-xs font-semibold transition ${colors.control} text-amber-700 dark:text-amber-400`}
+            title="Open Original Gutenberg Archive Edition in another tab"
           >
-            <Download size={16} />
-            <span className="hidden md:inline">Download</span>
+            <ExternalLink size={15} />
+            <span className="hidden lg:inline">Original Archive</span>
           </button>
 
           {/* Bookmark */}

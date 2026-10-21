@@ -1,6 +1,17 @@
 
-import { useEffect, useState } from "react";
-import { ArrowLeft, BookOpen, Download, LoaderCircle } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
+import {
+  ArrowLeft,
+  BookOpen,
+  Download,
+  LoaderCircle,
+  ExternalLink,
+  Sparkles,
+  ChevronDown,
+  FileText,
+  BookMarked,
+  Globe,
+} from "lucide-react";
 import { useNavigate, useParams } from "react-router-dom";
 import { getBookDetails, recordDownload } from "../services/bookService";
 import type { BookDetails } from "../services/bookService";
@@ -12,6 +23,18 @@ export default function BookDetailsPage() {
   const [book, setBook] = useState<BookDetails | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [downloadOpen, setDownloadOpen] = useState(false);
+  const downloadRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (downloadRef.current && !downloadRef.current.contains(event.target as Node)) {
+        setDownloadOpen(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
 
   useEffect(() => {
     let cancelled = false;
@@ -177,64 +200,174 @@ export default function BookDetailsPage() {
               ))}
             </div>
 
-            <div className="mt-8 flex flex-wrap gap-3 items-center">
-              {hasReadableEdition ? (
-                <button
-                  type="button"
-                  onClick={openReader}
-                  className="inline-flex items-center gap-2 rounded-xl bg-indigo-600 px-6 py-3 font-semibold text-white shadow transition hover:bg-indigo-700"
-                >
-                  <BookOpen size={18} />
-                  Read Book
-                </button>
-              ) : (
-                <p className="text-sm text-slate-500 dark:text-slate-400">
-                  An online reading edition is not available for this book.
-                </p>
-              )}
+            {/* Choose Reading Experience Section */}
+            <div className="mt-8 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm dark:border-white/10 dark:bg-gray-900/60">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4">
+                <h3 className="text-sm font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 flex items-center gap-2">
+                  <Sparkles size={16} className="text-amber-500" />
+                  Choose Reading Experience
+                </h3>
 
-              {/* EPUB Download */}
-              {book.formats["application/epub+zip"] && (
-                <a
-                  href={book.formats["application/epub+zip"]}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  onClick={() => recordDownload(book.id || Number(gutendexId))}
-                  className="inline-flex items-center gap-2 rounded-xl border border-indigo-200 bg-indigo-50 px-5 py-3 font-medium text-indigo-700 transition hover:bg-indigo-100 dark:border-indigo-500/20 dark:bg-indigo-500/10 dark:text-indigo-300"
-                >
-                  <Download size={18} />
-                  Download EPUB
-                </a>
-              )}
+                {/* Unified Download Dropdown */}
+                <div className="relative" ref={downloadRef}>
+                  <button
+                    type="button"
+                    onClick={() => setDownloadOpen(!downloadOpen)}
+                    className="inline-flex items-center gap-2 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-white/10 dark:hover:bg-white/15 px-3.5 py-2 text-xs font-semibold transition text-slate-800 dark:text-white"
+                  >
+                    <Download size={15} />
+                    <span>Download Options</span>
+                    <ChevronDown
+                      size={14}
+                      className={`transition-transform duration-200 ${downloadOpen ? "rotate-180" : ""}`}
+                    />
+                  </button>
 
-              {/* TXT Download */}
-              {(book.formats["text/plain; charset=utf-8"] || book.formats["text/plain"]) && (
-                <a
-                  href={book.formats["text/plain; charset=utf-8"] || book.formats["text/plain"]}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  onClick={() => recordDownload(book.id || Number(gutendexId))}
-                  className="inline-flex items-center gap-2 rounded-xl border border-slate-300 px-5 py-3 font-medium transition hover:bg-slate-100 dark:border-white/20 dark:hover:bg-white/10"
-                >
-                  <Download size={18} />
-                  Download Text
-                </a>
-              )}
+                  {downloadOpen && (
+                    <div className="absolute right-0 mt-2 w-60 rounded-xl border border-slate-200 bg-white p-1.5 shadow-xl dark:border-white/10 dark:bg-gray-800 z-50">
+                      <div className="px-2.5 py-1.5 text-[11px] font-bold uppercase tracking-wider text-slate-400">
+                        Available Formats
+                      </div>
 
-              {/* Gutenberg HTML Edition */}
-              {book.formats["text/html"] && (
-                <button
-                  type="button"
-                  onClick={() => {
-                    recordDownload(book.id || Number(gutendexId));
-                    window.open(book.formats["text/html"], "_blank", "noopener,noreferrer");
-                  }}
-                  className="inline-flex items-center gap-2 rounded-xl border border-slate-300 px-4 py-3 text-sm font-medium transition hover:bg-slate-100 dark:border-white/20 dark:hover:bg-white/10 opacity-75 hover:opacity-100"
-                >
-                  <Download size={16} />
-                  Gutenberg HTML
-                </button>
-              )}
+                      {/* EPUB Option */}
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const epubUrl =
+                            book.formats?.["application/epub+zip"] ||
+                            `https://www.gutenberg.org/ebooks/${gutendexId}.epub.images`;
+                          recordDownload(book.id || Number(gutendexId));
+                          window.open(epubUrl, "_blank", "noopener,noreferrer");
+                          setDownloadOpen(false);
+                        }}
+                        className="w-full flex items-center gap-2.5 rounded-lg px-2.5 py-2 text-xs font-medium text-slate-700 hover:bg-indigo-50 hover:text-indigo-600 dark:text-slate-200 dark:hover:bg-indigo-950/40 dark:hover:text-indigo-400 text-left transition"
+                      >
+                        <BookMarked size={16} className="text-indigo-500 shrink-0" />
+                        <div>
+                          <div className="font-semibold">EPUB E-Book</div>
+                          <div className="text-[10px] text-slate-400">For Apple Books, Kindle, Kobo</div>
+                        </div>
+                      </button>
+
+                      {/* Plain Text Option */}
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const textUrl =
+                            book.formats?.["text/plain; charset=utf-8"] ||
+                            book.formats?.["text/plain"] ||
+                            `https://www.gutenberg.org/ebooks/${gutendexId}.txt.utf-8`;
+                          recordDownload(book.id || Number(gutendexId));
+                          window.open(textUrl, "_blank", "noopener,noreferrer");
+                          setDownloadOpen(false);
+                        }}
+                        className="w-full flex items-center gap-2.5 rounded-lg px-2.5 py-2 text-xs font-medium text-slate-700 hover:bg-indigo-50 hover:text-indigo-600 dark:text-slate-200 dark:hover:bg-indigo-950/40 dark:hover:text-indigo-400 text-left transition"
+                      >
+                        <FileText size={16} className="text-emerald-500 shrink-0" />
+                        <div>
+                          <div className="font-semibold">Plain Text (.txt)</div>
+                          <div className="text-[10px] text-slate-400">Standard offline text format</div>
+                        </div>
+                      </button>
+
+                      {/* HTML Archive Option */}
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const archiveUrl =
+                            book.formats?.["text/html"] ||
+                            book.formats?.["text/html; charset=utf-8"] ||
+                            book.formats?.["text/html; charset=iso-8859-1"] ||
+                            `https://www.gutenberg.org/ebooks/${gutendexId}`;
+                          recordDownload(book.id || Number(gutendexId));
+                          window.open(archiveUrl, "_blank", "noopener,noreferrer");
+                          setDownloadOpen(false);
+                        }}
+                        className="w-full flex items-center gap-2.5 rounded-lg px-2.5 py-2 text-xs font-medium text-slate-700 hover:bg-indigo-50 hover:text-indigo-600 dark:text-slate-200 dark:hover:bg-indigo-950/40 dark:hover:text-indigo-400 text-left transition border-t border-slate-100 dark:border-white/5 mt-1 pt-2"
+                      >
+                        <Globe size={16} className="text-amber-500 shrink-0" />
+                        <div>
+                          <div className="font-semibold">Gutenberg HTML Archive</div>
+                          <div className="text-[10px] text-slate-400">Historical web edition (.htm)</div>
+                        </div>
+                      </button>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {/* Option 1: BookNest In-App Immersive Reader */}
+                <div className="flex flex-col justify-between p-4 rounded-xl border-2 border-indigo-500/40 bg-indigo-50/50 dark:bg-indigo-950/20 dark:border-indigo-500/30">
+                  <div>
+                    <div className="flex items-center justify-between mb-2">
+                      <span className="font-bold text-base text-indigo-950 dark:text-indigo-200">
+                        BookNest Reader
+                      </span>
+                      <span className="rounded-full bg-indigo-600 text-white text-[10px] font-bold px-2 py-0.5">
+                        RECOMMENDED
+                      </span>
+                    </div>
+                    <ul className="text-xs text-slate-600 dark:text-slate-300 space-y-1 mb-4">
+                      <li>• Realistic hardcover front cover & frontispiece</li>
+                      <li>• 2-page spread & mobile reflow views</li>
+                      <li>• Dark, Sepia, and Linen reading paper themes</li>
+                      <li>• Bookmark support & auto-progress resume</li>
+                    </ul>
+                  </div>
+
+                  {hasReadableEdition ? (
+                    <button
+                      type="button"
+                      onClick={openReader}
+                      className="w-full inline-flex items-center justify-center gap-2 rounded-xl bg-indigo-600 px-5 py-2.5 font-semibold text-white shadow transition hover:bg-indigo-700 text-sm"
+                    >
+                      <BookOpen size={16} />
+                      Read with BookNest
+                    </button>
+                  ) : (
+                    <p className="text-xs text-slate-500 dark:text-slate-400 italic">
+                      In-app reading edition not available for this text.
+                    </p>
+                  )}
+                </div>
+
+                {/* Option 2: Original Gutenberg Archive Edition */}
+                <div className="flex flex-col justify-between p-4 rounded-xl border border-slate-200 bg-slate-50/50 dark:border-white/10 dark:bg-white/5">
+                  <div>
+                    <div className="flex items-center justify-between mb-2">
+                      <span className="font-bold text-base">
+                        Original Archive Edition
+                      </span>
+                      <span className="rounded-full border border-slate-300 text-slate-500 dark:border-white/20 dark:text-slate-400 text-[10px] font-semibold px-2 py-0.5">
+                        UNALTERED 1800s
+                      </span>
+                    </div>
+                    <ul className="text-xs text-slate-600 dark:text-slate-300 space-y-1 mb-4">
+                      <li>• Opens authentic Gutenberg transcript in a new tab</li>
+                      <li>• Historical layout and original public domain archive</li>
+                      <li>• Direct text references and original formatting</li>
+                    </ul>
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const archiveUrl =
+                        book.formats?.["text/html"] ||
+                        book.formats?.["text/html; charset=utf-8"] ||
+                        book.formats?.["text/html; charset=iso-8859-1"] ||
+                        `https://www.gutenberg.org/ebooks/${gutendexId}`;
+                      recordDownload(book.id || Number(gutendexId));
+                      window.open(archiveUrl, "_blank", "noopener,noreferrer");
+                    }}
+                    className="w-full inline-flex items-center justify-center gap-2 rounded-xl border border-slate-300 bg-white px-5 py-2.5 text-sm font-semibold transition hover:bg-slate-100 dark:border-white/20 dark:bg-gray-800 dark:hover:bg-gray-700 text-slate-800 dark:text-white"
+                  >
+                    <ExternalLink size={16} />
+                    Open Original Archive ↗
+                  </button>
+                </div>
+              </div>
             </div>
           </section>
         </div>
