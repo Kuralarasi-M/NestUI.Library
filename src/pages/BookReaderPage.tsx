@@ -23,6 +23,9 @@ import {
   Download,
   ExternalLink,
   ChevronDown,
+  ChevronUp,
+  Search,
+  List,
   BookMarked,
   Globe,
   FileText,
@@ -114,11 +117,23 @@ export default function BookReaderPage() {
   const [downloadOpen, setDownloadOpen] = useState(false);
   const downloadRef = useRef<HTMLDivElement>(null);
 
+  // In-book search state (Google Books search bar)
+  const [searchQuery, setSearchQuery] = useState("");
+  const [searchOpen, setSearchOpen] = useState(false);
+  const [currentMatchIndex, setCurrentMatchIndex] = useState(0);
+
+  // Table of Contents drawer state
+  const [tocOpen, setTocOpen] = useState(false);
+  const tocRef = useRef<HTMLDivElement>(null);
+
   // Close download dropdown when clicking outside
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
       if (downloadRef.current && !downloadRef.current.contains(event.target as Node)) {
         setDownloadOpen(false);
+      }
+      if (tocRef.current && !tocRef.current.contains(event.target as Node)) {
+        setTocOpen(false);
       }
     }
     document.addEventListener("mousedown", handleClickOutside);
@@ -261,8 +276,76 @@ export default function BookReaderPage() {
     return pageList;
   }, [content]);
 
-  // +2 pages for Cover Page (0) and Title Page (1)
-  const totalPages = (pages.length ? pages.length + 2 : 1);
+  // Extract Table of Contents chapters from text
+  const chapters = useMemo(() => {
+    const list: { title: string; pageIndex: number }[] = [
+      { title: "Cover Page", pageIndex: 0 },
+      { title: "Title Page & Frontispiece", pageIndex: 1 },
+      { title: "Table of Contents", pageIndex: 2 },
+    ];
+
+    pages.forEach((pageParagraphs, idx) => {
+      for (const p of pageParagraphs) {
+        const isHeading =
+          p.length < 90 &&
+          (/^(chapter|book|act|scene|part|prologue|epilogue|introduction|contents)\b/i.test(p) ||
+            p === p.toUpperCase());
+        if (isHeading) {
+          list.push({
+            title: p,
+            pageIndex: idx + 3, // Cover (0) + Frontispiece (1) + TOC (2) = +3 offset
+          });
+          break;
+        }
+      }
+    });
+
+    return list;
+  }, [pages]);
+
+  // Compute search matches across all pages
+  const searchMatches = useMemo(() => {
+    if (!searchQuery.trim() || searchQuery.trim().length < 2) return [];
+    const query = searchQuery.toLowerCase();
+    const matches: { pageIndex: number; preview: string }[] = [];
+
+    // Search through pages
+    pages.forEach((pageParagraphs, pIdx) => {
+      const pageText = pageParagraphs.join(" ");
+      if (pageText.toLowerCase().includes(query)) {
+        // Build preview snippet
+        const matchIdx = pageText.toLowerCase().indexOf(query);
+        const snippetStart = Math.max(0, matchIdx - 35);
+        const snippetEnd = Math.min(pageText.length, matchIdx + query.length + 45);
+        const preview =
+          (snippetStart > 0 ? "..." : "") +
+          pageText.slice(snippetStart, snippetEnd) +
+          (snippetEnd < pageText.length ? "..." : "");
+
+        matches.push({
+          pageIndex: pIdx + 3, // Account for Cover (0), Title (1), TOC (2)
+          preview,
+        });
+      }
+    });
+
+    return matches;
+  }, [pages, searchQuery]);
+
+  // +3 pages for Cover Page (0), Title Page (1), and Table of Contents (2)
+  const totalPages = pages.length ? pages.length + 3 : 1;
+
+  // Jump to specific search match
+  const goToMatch = useCallback(
+    (index: number) => {
+      if (!searchMatches.length) return;
+      const normalizedIndex =
+        (index + searchMatches.length) % searchMatches.length;
+      setCurrentMatchIndex(normalizedIndex);
+      goToPage(searchMatches[normalizedIndex].pageIndex);
+    },
+    [searchMatches]
+  );
 
   // Turn page safely and persist
   const goToPage = useCallback(
@@ -441,8 +524,47 @@ export default function BookReaderPage() {
       );
     }
 
-    // PAGES 2+: Main Body Text (pageIndex - 2 corresponds to pages array index)
-    const textPageIndex = pageIndex - 2;
+    // PAGE 2: Table of Contents (like Google Books screenshot 1)
+    if (pageIndex === 2) {
+      return (
+        <div className="relative flex h-full w-full flex-col justify-between p-8 sm:p-12 select-text">
+          <div className="border-b border-current/10 pb-2 text-[10px] uppercase tracking-widest opacity-50 text-center">
+            Contents
+          </div>
+
+          <div className="my-auto py-4 overflow-y-auto max-w-lg mx-auto w-full">
+            <h2 className="text-xl sm:text-2xl font-serif font-bold text-center mb-6">
+              Table of Contents
+            </h2>
+
+            <div className="space-y-2.5">
+              {chapters.map((ch, idx) => (
+                <button
+                  key={idx}
+                  type="button"
+                  onClick={() => goToPage(ch.pageIndex)}
+                  className="w-full group flex items-baseline justify-between text-left text-sm py-1.5 px-2 rounded-lg hover:bg-black/5 dark:hover:bg-white/5 transition"
+                >
+                  <span className="font-serif group-hover:text-indigo-600 dark:group-hover:text-indigo-400 group-hover:underline truncate pr-4 text-xs sm:text-sm">
+                    {ch.title}
+                  </span>
+                  <span className="text-[11px] font-mono opacity-50 group-hover:opacity-100 shrink-0">
+                    p. {ch.pageIndex + 1}
+                  </span>
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <div className="border-t border-current/10 pt-2 text-[11px] font-serif opacity-50 text-center">
+            — Table of Contents —
+          </div>
+        </div>
+      );
+    }
+
+    // PAGES 3+: Main Body Text (pageIndex - 3 corresponds to pages array index)
+    const textPageIndex = pageIndex - 3;
     const pageContent = pages[textPageIndex];
     if (!pageContent) {
       return (
@@ -567,7 +689,7 @@ export default function BookReaderPage() {
                 onClick={handleNext}
                 className="flex items-center gap-1 px-4 py-2 rounded-xl bg-indigo-600 text-white text-xs font-semibold"
               >
-                Chapter 1 &rarr;
+                Contents &rarr;
               </button>
             </div>
           </div>
@@ -575,7 +697,50 @@ export default function BookReaderPage() {
       );
     }
 
-    const textPageIndex = currentPage - 2;
+    if (currentPage === 2) {
+      return (
+        <div className="w-full max-w-xl mx-auto px-4 py-8 sm:px-6">
+          <div className="p-6 rounded-2xl border border-current/10 space-y-4">
+            <span className="text-[11px] uppercase tracking-widest opacity-60 block text-center">
+              Table of Contents
+            </span>
+            <div className="space-y-2 pt-2">
+              {chapters.map((ch, idx) => (
+                <button
+                  key={idx}
+                  type="button"
+                  onClick={() => goToPage(ch.pageIndex)}
+                  className="w-full flex items-center justify-between text-left py-2 px-3 rounded-lg hover:bg-black/5 dark:hover:bg-white/5 transition"
+                >
+                  <span className="font-serif text-sm truncate pr-2 hover:underline hover:text-indigo-600 dark:hover:text-indigo-400">
+                    {ch.title}
+                  </span>
+                  <span className="text-xs font-mono opacity-50 shrink-0">
+                    p. {ch.pageIndex + 1}
+                  </span>
+                </button>
+              ))}
+            </div>
+            <div className="pt-4 flex justify-between items-center border-t border-current/10">
+              <button
+                onClick={handlePrev}
+                className={`flex items-center gap-1 px-4 py-2 rounded-xl text-xs font-semibold ${colors.control}`}
+              >
+                &larr; Title Page
+              </button>
+              <button
+                onClick={handleNext}
+                className="flex items-center gap-1 px-4 py-2 rounded-xl bg-indigo-600 text-white text-xs font-semibold"
+              >
+                Start Reading &rarr;
+              </button>
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    const textPageIndex = currentPage - 3;
     const pageContent = pages[textPageIndex];
     if (!pageContent) return null;
 
@@ -969,27 +1134,211 @@ export default function BookReaderPage() {
         </main>
       )}
 
-      {/* Bottom Progress Scrubber */}
-      <footer className={`border-t px-4 py-2.5 ${colors.toolbar} backdrop-blur-md`}>
-        <div className="mx-auto flex max-w-3xl items-center gap-3">
-          <span className="text-xs font-serif font-semibold whitespace-nowrap">
-            {currentPage + 1}
-            {isTwoPage && viewMode === "pdf" && currentPage + 1 < totalPages ? `–${currentPage + 2}` : ""} of {totalPages}
-          </span>
+      {/* Google Books Floating Action & Control Dock */}
+      <footer className="fixed bottom-5 left-1/2 -translate-x-1/2 z-40 w-full max-w-4xl px-4 pointer-events-none">
+        <div className="flex flex-col items-center gap-2">
+          {/* In-Book Search Floating Box (Appears when Search is opened or active) */}
+          {searchOpen && (
+            <div className="pointer-events-auto flex items-center gap-2 rounded-2xl bg-gray-900/95 text-white p-2 px-3 shadow-2xl border border-white/10 backdrop-blur-md w-full max-w-md animate-in fade-in slide-in-from-bottom-2">
+              <Search size={16} className="text-slate-400 shrink-0 ml-1" />
+              <input
+                type="text"
+                value={searchQuery}
+                onChange={(e) => {
+                  setSearchQuery(e.target.value);
+                  setCurrentMatchIndex(0);
+                }}
+                placeholder="Search inside book..."
+                className="flex-1 bg-transparent text-xs text-white placeholder-slate-400 outline-none"
+                autoFocus
+              />
+              <span className="text-[11px] font-mono text-slate-300 px-1 whitespace-nowrap">
+                {searchMatches.length > 0
+                  ? `${currentMatchIndex + 1} of ${searchMatches.length}`
+                  : searchQuery.trim().length >= 2
+                  ? "0 results"
+                  : ""}
+              </span>
 
-          <input
-            type="range"
-            min={0}
-            max={totalPages - 1}
-            step={isTwoPage && viewMode === "pdf" ? 2 : 1}
-            value={currentPage}
-            onChange={(e) => goToPage(Number(e.target.value))}
-            className="h-1.5 w-full cursor-pointer appearance-none rounded-lg bg-black/10 accent-indigo-600 dark:bg-white/20"
-          />
+              <button
+                type="button"
+                onClick={() => goToMatch(currentMatchIndex - 1)}
+                disabled={!searchMatches.length}
+                className="p-1 rounded-lg hover:bg-white/10 disabled:opacity-30 text-white"
+                title="Previous match"
+              >
+                <ChevronUp size={16} />
+              </button>
+              <button
+                type="button"
+                onClick={() => goToMatch(currentMatchIndex + 1)}
+                disabled={!searchMatches.length}
+                className="p-1 rounded-lg hover:bg-white/10 disabled:opacity-30 text-white"
+                title="Next match"
+              >
+                <ChevronDown size={16} />
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setSearchOpen(false);
+                  setSearchQuery("");
+                }}
+                className="p-1 rounded-lg hover:bg-white/10 text-slate-400 hover:text-white"
+                title="Close search"
+              >
+                <X size={15} />
+              </button>
+            </div>
+          )}
 
-          <span className="text-xs font-semibold whitespace-nowrap opacity-60">
-            {progressPercentage}%
-          </span>
+          {/* Signature Google Books Bottom Pill Control Bar */}
+          <div className="pointer-events-auto flex items-center gap-2 sm:gap-3 rounded-2xl bg-gray-950/90 text-white px-3 sm:px-4 py-2 shadow-2xl border border-white/10 backdrop-blur-md">
+            {/* Search Pill Trigger */}
+            <button
+              type="button"
+              onClick={() => setSearchOpen(!searchOpen)}
+              className={`flex items-center gap-1.5 rounded-xl px-2.5 py-1.5 text-xs font-semibold transition ${
+                searchOpen || searchQuery
+                  ? "bg-indigo-600 text-white"
+                  : "bg-white/10 hover:bg-white/15 text-slate-200"
+              }`}
+              title="Search in book"
+            >
+              <Search size={14} />
+              <span className="hidden sm:inline">
+                {searchQuery ? `"${searchQuery.slice(0, 10)}..."` : "Search"}
+              </span>
+            </button>
+
+            {/* Contents Dropdown Trigger */}
+            <div className="relative" ref={tocRef}>
+              <button
+                type="button"
+                onClick={() => setTocOpen(!tocOpen)}
+                className={`flex items-center gap-1.5 rounded-xl px-2.5 py-1.5 text-xs font-semibold transition ${
+                  tocOpen ? "bg-indigo-600 text-white" : "bg-white/10 hover:bg-white/15 text-slate-200"
+                }`}
+                title="Table of Contents"
+              >
+                <List size={14} />
+                <span>Contents</span>
+                <ChevronDown
+                  size={13}
+                  className={`transition-transform duration-200 ${tocOpen ? "rotate-180" : ""}`}
+                />
+              </button>
+
+              {/* Contents Popup Menu */}
+              {tocOpen && (
+                <div className="absolute bottom-full left-0 mb-3 w-72 max-h-80 overflow-y-auto rounded-2xl bg-gray-900/95 border border-white/15 p-2 shadow-2xl text-white backdrop-blur-md z-50">
+                  <div className="px-3 py-2 text-[11px] font-bold uppercase tracking-wider text-slate-400 border-b border-white/10">
+                    Table of Contents
+                  </div>
+                  <div className="py-1">
+                    {chapters.map((ch, idx) => (
+                      <button
+                        key={idx}
+                        type="button"
+                        onClick={() => {
+                          goToPage(ch.pageIndex);
+                          setTocOpen(false);
+                        }}
+                        className={`w-full flex items-center justify-between text-left px-3 py-2 text-xs rounded-xl transition ${
+                          currentPage === ch.pageIndex
+                            ? "bg-indigo-600 text-white font-semibold"
+                            : "hover:bg-white/10 text-slate-200"
+                        }`}
+                      >
+                        <span className="truncate pr-3">{ch.title}</span>
+                        <span className="text-[10px] font-mono opacity-50 shrink-0">
+                          p. {ch.pageIndex + 1}
+                        </span>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+
+            <div className="h-4 w-[1px] bg-white/15 hidden sm:block" />
+
+            {/* View Mode (Single vs Two-Page Spread) */}
+            {viewMode === "pdf" && (
+              <div className="hidden md:flex items-center gap-1 bg-white/5 p-1 rounded-xl">
+                <button
+                  type="button"
+                  onClick={() => setIsTwoPage(false)}
+                  className={`p-1.5 rounded-lg text-xs transition ${
+                    !isTwoPage ? "bg-white/20 text-white" : "text-slate-400 hover:text-white"
+                  }`}
+                  title="Single Page View"
+                >
+                  <Square size={14} />
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setIsTwoPage(true)}
+                  className={`p-1.5 rounded-lg text-xs transition ${
+                    isTwoPage ? "bg-white/20 text-white" : "text-slate-400 hover:text-white"
+                  }`}
+                  title="Two-Page Spread View"
+                >
+                  <Columns2 size={14} />
+                </button>
+              </div>
+            )}
+
+            {/* Zoom Controls */}
+            {viewMode === "pdf" && (
+              <div className="hidden sm:flex items-center gap-1 bg-white/5 p-1 rounded-xl">
+                <button
+                  type="button"
+                  onClick={handleZoomOut}
+                  disabled={zoomLevel <= 75}
+                  className="p-1 text-slate-300 hover:text-white disabled:opacity-30"
+                  title="Zoom Out"
+                >
+                  <ZoomOut size={14} />
+                </button>
+                <span className="px-1 text-[11px] font-mono text-slate-300">
+                  {zoomLevel}%
+                </span>
+                <button
+                  type="button"
+                  onClick={handleZoomIn}
+                  disabled={zoomLevel >= 250}
+                  className="p-1 text-slate-300 hover:text-white disabled:opacity-30"
+                  title="Zoom In"
+                >
+                  <ZoomIn size={14} />
+                </button>
+              </div>
+            )}
+
+            <div className="h-4 w-[1px] bg-white/15" />
+
+            {/* Page Scrubber & Label */}
+            <div className="flex items-center gap-2">
+              <span className="text-[11px] font-mono text-slate-300 whitespace-nowrap">
+                {currentPage + 1}
+                {isTwoPage && viewMode === "pdf" && currentPage + 1 < totalPages
+                  ? `–${currentPage + 2}`
+                  : ""}{" "}
+                / {totalPages}
+              </span>
+
+              <input
+                type="range"
+                min={0}
+                max={totalPages - 1}
+                step={isTwoPage && viewMode === "pdf" ? 2 : 1}
+                value={currentPage}
+                onChange={(e) => goToPage(Number(e.target.value))}
+                className="w-16 sm:w-28 h-1.5 cursor-pointer appearance-none rounded-lg bg-white/20 accent-indigo-500"
+              />
+            </div>
+          </div>
         </div>
       </footer>
 
