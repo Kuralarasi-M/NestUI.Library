@@ -60,6 +60,38 @@ export async function getAllBooks(): Promise<Book[]> {
   return response.json();
 }
 
+/**
+ * Calls backend API GET /api/Books/Language/{languageCode}
+ * Seamlessly retrieves books in specific languages (Tamil 'ta', English 'en', French 'fr', German 'de', Spanish 'es')
+ * with server-side caching and fallback.
+ */
+export async function getBooksByLanguage(
+  languageCode: string,
+  query?: string,
+  topic?: string
+): Promise<Book[]> {
+  const params = new URLSearchParams();
+  if (query?.trim()) params.append("query", query.trim());
+  if (topic?.trim() && topic !== "All") params.append("topic", topic.trim());
+
+  const queryString = params.toString() ? `?${params.toString()}` : "";
+  const url = `${API_BASE_URL}/Language/${encodeURIComponent(languageCode)}${queryString}`;
+
+  const response = await fetch(url, {
+    headers: getAuthHeaders(),
+  });
+
+  if (response.status === 401) {
+    throw new Error("401: Session expired or invalid token. Please log in.");
+  }
+
+  if (!response.ok) {
+    throw new Error(`Unable to load books for language ${languageCode}.`);
+  }
+
+  return response.json();
+}
+
 export interface GutendexSearchParams {
   search?: string;
   topic?: string;

@@ -6,6 +6,7 @@ import {
   Heart,
   History,
   Search,
+  Languages,
   X,
   LogIn,
   LogOut,
@@ -21,6 +22,7 @@ interface SidebarProps {
 
 const links = [
   { to: "/", label: "Dashboard", icon: LayoutDashboard },
+  { to: "/languages", label: "Languages / தமிழ்", icon: Languages },
   { to: "/discover", label: "Discover", icon: Compass },
   { to: "/favorites", label: "Favorites", icon: Heart },
   { to: "/history", label: "Reading History", icon: History },
