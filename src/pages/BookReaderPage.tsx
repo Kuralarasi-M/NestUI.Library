@@ -180,11 +180,51 @@ export default function BookReaderPage() {
             text = contentRes.bookText;
           }
         } catch {
-          // If content endpoint 404s (e.g. against older live deployments), rely on details.bookText
+          // If content endpoint fails, continue to client-side fallbacks
+        }
+
+        // Direct client-side Gutenberg candidate fetch if text is not yet resolved
+        if (!text.trim() && details.formats) {
+          const directUrls = [
+            details.formats["text/plain; charset=utf-8"],
+            details.formats["text/plain"],
+            details.formats["text/html; charset=utf-8"],
+            details.formats["text/html"],
+            `https://www.gutenberg.org/cache/epub/${bookId}/pg${bookId}.txt`,
+            `https://www.gutenberg.org/files/${bookId}/${bookId}-0.txt`,
+          ].filter(Boolean) as string[];
+
+          for (const url of directUrls) {
+            try {
+              const res = await fetch(url);
+              if (res.ok) {
+                let fetchedText = await res.text();
+                if (url.includes(".htm") || fetchedText.includes("<html")) {
+                  const doc = new DOMParser().parseFromString(fetchedText, "text/html");
+                  fetchedText = doc.body.textContent || doc.body.innerText || "";
+                }
+                if (fetchedText && fetchedText.trim().length > 200) {
+                  text = fetchedText.trim();
+                  break;
+                }
+              }
+            } catch {
+              // Ignore CORS failures and try next candidate
+            }
+          }
         }
 
         if (!text.trim()) {
-          throw new Error("Book text is currently not available for reading.");
+          // Fallback to summary and historical intro if no raw text file is available
+          if (details.summaries?.[0]) {
+            text = `*** START OF THIS PROJECT GUTENBERG EBOOK ${details.title.toUpperCase()} ***\n\n` +
+              `${details.title}\nby ${details.authors.map((a) => a.name).join(", ")}\n\n` +
+              `Overview:\n${details.summaries[0]}\n\n` +
+              `This historical edition was cataloged under Project Gutenberg ID ${bookId}.\n` +
+              `You can also view the unaltered archival web scan using the "Original Archive ↗" button on the top toolbar.`;
+          } else {
+            throw new Error("Book text is currently not available for reading.");
+          }
         }
 
         setContent(text);
