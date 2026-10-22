@@ -15,6 +15,7 @@ export default function DiscoverPage() {
   const [query, setQuery] = useState(initialQuery);
   const [selectedGenre, setSelectedGenre] = useState<string>("All");
   const [selectedLanguage, setSelectedLanguage] = useState<string>("all");
+  const [bookIds, setBookIds] = useState<string>("");
   const [sortBy, setSortBy] = useState<"popular" | "title" | "author">("popular");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -22,7 +23,7 @@ export default function DiscoverPage() {
   const { theme, toggleTheme } = useTheme();
   const navigate = useNavigate();
 
-  // Load books from backend search endpoint GET /api/Books/Search
+  // Load books with live Gutendex API integration & local DB fallback
   useEffect(() => {
     let cancelled = false;
 
@@ -32,8 +33,13 @@ export default function DiscoverPage() {
         setError("");
 
         const [booksData, favIds] = await Promise.all([
-          query.trim() || selectedLanguage !== "all"
-            ? searchBooks(query, selectedLanguage)
+          query.trim() || selectedLanguage !== "all" || selectedGenre !== "All" || bookIds.trim()
+            ? searchBooks(
+                query,
+                selectedLanguage,
+                selectedGenre !== "All" ? selectedGenre : undefined,
+                bookIds.trim() || undefined
+              )
             : getAllBooks(),
           getFavoriteIds().catch(() => []),
         ]);
@@ -62,7 +68,7 @@ export default function DiscoverPage() {
     return () => {
       cancelled = true;
     };
-  }, [query, selectedLanguage, navigate]);
+  }, [query, selectedLanguage, selectedGenre, bookIds, navigate]);
 
   // Sync URL search param changes into state
   useEffect(() => {
@@ -181,7 +187,7 @@ export default function DiscoverPage() {
           <input
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            placeholder="Search across all titles, authors, genres, or keywords..."
+            placeholder="Search by title or author (e.g. 'harry potter', 'Jane Austen')..."
             className="w-full rounded-2xl border border-slate-200 bg-slate-50 py-2.5 pl-11 pr-10 text-sm text-slate-900 placeholder:text-slate-400 outline-none focus:border-indigo-500 focus:bg-white dark:border-white/10 dark:bg-gray-900 dark:text-white dark:placeholder:text-slate-500 dark:focus:bg-gray-900"
           />
           {query && (
@@ -254,18 +260,50 @@ export default function DiscoverPage() {
             <option value="de">Deutsch (de)</option>
           </select>
 
-          {/* Genre selector */}
+          {/* Topic / Genre selector */}
           <select
             value={selectedGenre}
             onChange={(e) => setSelectedGenre(e.target.value)}
             className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-1.5 text-xs font-medium outline-none focus:border-indigo-500 dark:border-white/10 dark:bg-gray-800 max-w-[200px]"
           >
-            {availableGenres.map((g) => (
-              <option key={g} value={g}>
-                {g}
-              </option>
-            ))}
+            <option value="All">All Topics / Genres</option>
+            <option value="fiction">Fiction</option>
+            <option value="adventure">Adventure</option>
+            <option value="mystery">Mystery</option>
+            <option value="philosophy">Philosophy</option>
+            <option value="science">Science</option>
+            <option value="poetry">Poetry</option>
+            <option value="history">History</option>
+            {availableGenres
+              .filter((g) => !["All", "fiction", "adventure", "mystery", "philosophy", "science", "poetry", "history"].includes(g.toLowerCase()))
+              .map((g) => (
+                <option key={g} value={g}>
+                  {g}
+                </option>
+              ))}
           </select>
+
+          {/* Filter by Gutenberg Book IDs (e.g. 1342, 11, 84) */}
+          <div className="flex items-center gap-1.5">
+            <input
+              type="text"
+              value={bookIds}
+              onChange={(e) => setBookIds(e.target.value)}
+              placeholder="Filter IDs: 1342, 11, 84"
+              className="w-36 rounded-xl border border-slate-200 bg-slate-50 px-2.5 py-1.5 text-xs font-mono placeholder:text-slate-400 outline-none focus:border-indigo-500 dark:border-white/10 dark:bg-gray-800"
+              title="Filter by specific Gutenberg Book IDs (comma-separated, e.g. 1342, 11, 84)"
+            />
+            {bookIds && (
+              <button
+                type="button"
+                onClick={() => setBookIds("")}
+                className="text-slate-400 hover:text-slate-600 dark:hover:text-white"
+                title="Clear ID filter"
+              >
+                <X size={14} />
+              </button>
+            )}
+          </div>
 
           {/* Sort selector */}
           <div className="ml-auto flex items-center gap-2">

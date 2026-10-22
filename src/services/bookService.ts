@@ -60,7 +60,117 @@ export async function getAllBooks(): Promise<Book[]> {
   return response.json();
 }
 
-export async function searchBooks(query: string, language?: string): Promise<Book[]> {
+export interface GutendexSearchParams {
+  search?: string;
+  topic?: string;
+  languages?: string;
+  ids?: string;
+}
+
+// Map raw Gutendex book object to application Book interface
+function mapGutendexToBook(item: any): Book {
+  const authorName =
+    item.authors && item.authors.length > 0
+      ? item.authors.map((a: any) => a.name).join(", ")
+      : "Unknown Author";
+
+  const coverImage =
+    item.formats?.["image/jpeg"] ||
+    `https://www.gutenberg.org/cache/epub/${item.id}/pg${item.id}.cover.medium.jpg`;
+
+  const language =
+    item.languages && item.languages.length > 0
+      ? item.languages[0]
+      : "en";
+
+  const subjects =
+    Array.isArray(item.subjects)
+      ? item.subjects.join("; ")
+      : "";
+
+  const genre =
+    Array.isArray(item.bookshelves) && item.bookshelves.length > 0
+      ? item.bookshelves.join(", ")
+      : Array.isArray(item.subjects) && item.subjects.length > 0
+      ? item.subjects[0]
+      : "General";
+
+  const summary =
+    Array.isArray(item.summaries) && item.summaries.length > 0
+      ? item.summaries[0]
+      : `Classic work by ${authorName}.`;
+
+  return {
+    id: item.id,
+    gutendexId: item.id,
+    title: item.title || "Untitled",
+    author: authorName,
+    coverImage,
+    language,
+    genre,
+    summary,
+    subjects,
+    downloadCount: item.download_count || 0,
+  };
+}
+
+/**
+ * Direct search against Gutendex API:
+ * - Search by title or author: ?search=harry+potter or ?search=Jane+Austen
+ * - Filter by topic: ?topic=fiction
+ * - Filter by language: ?languages=en
+ * - Filter by Gutenberg book IDs: ?ids=1342,11,84
+ */
+export async function searchGutendexBooks(params: GutendexSearchParams): Promise<Book[]> {
+  const queryParams = new URLSearchParams();
+
+  if (params.search?.trim()) {
+    queryParams.append("search", params.search.trim());
+  }
+  if (params.topic?.trim() && params.topic !== "All") {
+    queryParams.append("topic", params.topic.trim());
+  }
+  if (params.languages?.trim() && params.languages !== "all") {
+    queryParams.append("languages", params.languages.trim());
+  }
+  if (params.ids?.trim()) {
+    queryParams.append("ids", params.ids.trim());
+  }
+
+  const url = `https://gutendex.com/books/?${queryParams.toString()}`;
+
+  const response = await fetch(url);
+  if (!response.ok) {
+    throw new Error(`Gutendex request failed with status: ${response.status}`);
+  }
+
+  const data = await response.json();
+  const rawResults: any[] = data.results || [];
+  return rawResults.map(mapGutendexToBook);
+}
+
+export async function searchBooks(
+  query: string,
+  language?: string,
+  topic?: string,
+  ids?: string
+): Promise<Book[]> {
+  // 1. First attempt live search via Gutendex API for comprehensive 70,000+ catalog results
+  try {
+    const gutendexResults = await searchGutendexBooks({
+      search: query,
+      languages: language,
+      topic,
+      ids,
+    });
+    if (gutendexResults && gutendexResults.length > 0) {
+      return gutendexResults;
+    }
+  } catch (err) {
+    console.warn("Gutendex direct search error, falling back to local database:", err);
+  }
+
+  // 2. Fallback to local database search endpoint GET /api/Books/Search
   const params = new URLSearchParams();
   if (query?.trim()) params.append("query", query.trim());
   if (language && language !== "all") params.append("language", language);
