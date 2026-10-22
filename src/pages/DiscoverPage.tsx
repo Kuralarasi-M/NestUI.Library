@@ -132,7 +132,8 @@ export default function DiscoverPage() {
     }
   }
 
-  // Filter & Sort
+  // Filter & Sort: since backend/Gutendex already performs server-side filtering on query, language, topic, and IDs,
+  // we do safe client-side refinement and sorting without dropping books that have different bookshelf metadata format.
   const filteredBooks = useMemo(() => {
     const qLower = query.toLowerCase().trim();
 
@@ -146,10 +147,11 @@ export default function DiscoverPage() {
         book.subjects?.toLowerCase().includes(qLower) ||
         book.summary?.toLowerCase().includes(qLower);
 
-      // Genre filter
+      // Genre / Topic matching: check both genre and subjects fields
       const matchesGenre =
         selectedGenre === "All" ||
-        book.genre?.toLowerCase().includes(selectedGenre.toLowerCase());
+        book.genre?.toLowerCase().includes(selectedGenre.toLowerCase()) ||
+        book.subjects?.toLowerCase().includes(selectedGenre.toLowerCase());
 
       // Language filter
       const matchesLang =
@@ -158,6 +160,7 @@ export default function DiscoverPage() {
         (selectedLanguage === "ta" &&
           (book.language?.toLowerCase().includes("ta") ||
             book.genre?.toLowerCase().includes("tamil") ||
+            book.subjects?.toLowerCase().includes("tamil") ||
             book.title?.toLowerCase().includes("tamil")));
 
       return matchesQuery && matchesGenre && matchesLang;
