@@ -187,40 +187,13 @@ export async function searchBooks(
   topic?: string,
   ids?: string
 ): Promise<Book[]> {
-  // 1. First attempt live search via Gutendex API for comprehensive 70,000+ catalog results
-  try {
-    const gutendexResults = await searchGutendexBooks({
-      search: query,
-      languages: language,
-      topic,
-      ids,
-    });
-    if (gutendexResults && gutendexResults.length > 0) {
-      return gutendexResults;
-    }
-  } catch (err) {
-    console.warn("Gutendex direct search error, falling back to local database:", err);
-  }
-
-  // 2. Fallback to local database search endpoint GET /api/Books/Search
-  const params = new URLSearchParams();
-  if (query?.trim()) params.append("query", query.trim());
-  if (language && language !== "all") params.append("language", language);
-
-  const url = `${API_BASE_URL}/Search?${params.toString()}`;
-  const response = await fetch(url, {
-    headers: getAuthHeaders(),
+  // Pure direct search against Gutendex API (70,000+ catalog)
+  return await searchGutendexBooks({
+    search: query,
+    languages: language,
+    topic,
+    ids,
   });
-
-  if (response.status === 401) {
-    throw new Error("401: Session expired or invalid token. Please log in.");
-  }
-
-  if (!response.ok) {
-    throw new Error("Unable to perform search.");
-  }
-
-  return response.json();
 }
 
 export async function getBookDetails(
