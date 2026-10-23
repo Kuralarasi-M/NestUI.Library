@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { BookOpen, Mail, Lock, User, ArrowRight, LoaderCircle, Eye, EyeOff } from "lucide-react";
 import { loginUser, registerUser, saveLoggedInUser } from "../services/authServices";
+import { syncFcmToken } from "../services/fcmService";
 
 export default function AuthPage() {
   const [isRegister, setIsRegister] = useState(false);
@@ -35,6 +36,9 @@ export default function AuthPage() {
           setError(res.message || "Registration failed.");
         } else {
           setSuccessMsg("Account created! Please log in.");
+          if (res.userId) {
+            syncFcmToken(res.userId).catch(() => {});
+          }
           setIsRegister(false);
           setPassword("");
         }
@@ -44,6 +48,9 @@ export default function AuthPage() {
           setError(res.message || "Invalid credentials.");
         } else {
           saveLoggedInUser(res);
+          if (res.userId) {
+            syncFcmToken(res.userId).catch(() => {});
+          }
           navigate("/");
         }
       }

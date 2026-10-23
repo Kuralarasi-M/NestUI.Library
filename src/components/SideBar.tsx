@@ -10,23 +10,27 @@ import {
   X,
   LogIn,
   LogOut,
+  Bell,
+  Send,
 } from "lucide-react";
 import { NavLink, useNavigate } from "react-router-dom";
 import { useEffect, useState } from "react";
 import { getLoggedInUser, logoutUser, type LoginResponse } from "../services/authServices";
+import { removeFcmToken } from "../services/fcmService";
 
 interface SidebarProps {
   open: boolean;
   onClose: () => void;
 }
 
-const links = [
+const baseLinks = [
   { to: "/", label: "Dashboard", icon: LayoutDashboard },
   { to: "/languages", label: "Languages / தமிழ்", icon: Languages },
   { to: "/discover", label: "Discover", icon: Compass },
   { to: "/favorites", label: "Favorites", icon: Heart },
   { to: "/history", label: "Reading History", icon: History },
   { to: "/search-history", label: "Search History", icon: Search },
+  { to: "/notifications", label: "Notifications", icon: Bell },
 ];
 
 export default function Sidebar({ open, onClose }: SidebarProps) {
@@ -37,7 +41,15 @@ export default function Sidebar({ open, onClose }: SidebarProps) {
     setCurrentUser(getLoggedInUser());
   }, [open]);
 
+  const isAdmin = currentUser?.role?.toLowerCase() === "admin";
+  const links = isAdmin
+    ? [...baseLinks, { to: "/admin/broadcast", label: "Send Broadcast", icon: Send }]
+    : baseLinks;
+
   function handleLogout() {
+    if (currentUser?.userId) {
+      removeFcmToken(currentUser.userId).catch(() => {});
+    }
     logoutUser();
     setCurrentUser(null);
     navigate("/login");

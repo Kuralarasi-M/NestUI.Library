@@ -58,6 +58,8 @@ import HistoryPage from "./pages/HistoryPage";
 import SearchHistoryPage from "./pages/SearchHistoryPage";
 import DiscoverPage from "./pages/DiscoverPage";
 import LanguageBooksPage from "./pages/LanguageBooksPage";
+import NotificationsPage from "./pages/NotificationsPage";
+import SendNotificationPage from "./pages/SendNotificationPage";
 
 export default function App() {
   return (
@@ -74,6 +76,8 @@ export default function App() {
           <Route path="/favorites" element={<FavoritesPage />} />
           <Route path="/history" element={<HistoryPage />} />
           <Route path="/search-history" element={<SearchHistoryPage />} />
+          <Route path="/notifications" element={<NotificationsPage />} />
+          <Route path="/admin/broadcast" element={<SendNotificationPage />} />
           <Route path="/books/:gutendexId" element={<BookDetailsPage />} />
           <Route path="*" element={<NotFoundRoute />} />
         </Route>

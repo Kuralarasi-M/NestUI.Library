@@ -1,6 +1,6 @@
 
 import { useEffect, useState, useRef } from "react";
-import { Search, Menu, Moon, Sun, Languages, BookOpen } from "lucide-react";
+import { Search, Menu, Moon, Sun, Languages, BookOpen, Bell } from "lucide-react";
 import { useTheme } from "../hooks/useTheme";
 import {
   getAllBooks,
@@ -11,6 +11,7 @@ import {
   type ReadingHistoryItem,
 } from "../services/bookService";
 import type { Book } from "../services/bookService";
+import { getUnreadNotificationCount } from "../services/notificationService";
 import BookCard from "../components/BookCard";
 import { useNavigate, useSearchParams } from "react-router-dom";
 
@@ -29,6 +30,7 @@ export default function Dashboard({ onOpenMenu }: DashboardProps) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [search, setSearch] = useState(urlSearch);
+  const [unreadCount, setUnreadCount] = useState<number>(0);
 
   const { theme, toggleTheme } = useTheme();
   const navigate = useNavigate();
@@ -59,15 +61,17 @@ export default function Dashboard({ onOpenMenu }: DashboardProps) {
         setLoading(true);
         setError("");
 
-        const [booksData, favIds, historyData] = await Promise.all([
+        const [booksData, favIds, historyData, notifCount] = await Promise.all([
           getAllBooks(),
           getFavoriteIds().catch(() => []),
           getReadingHistory().catch(() => []),
+          getUnreadNotificationCount().catch(() => 0),
         ]);
 
         setBooks(booksData);
         setFavoriteIds(new Set(favIds));
         setRecentReads(historyData.slice(0, 3));
+        setUnreadCount(notifCount);
       } catch (err: any) {
         if (err?.message?.includes("Session expired") || err?.message?.includes("401")) {
           window.location.href = "/login";
@@ -186,6 +190,27 @@ export default function Dashboard({ onOpenMenu }: DashboardProps) {
             }}
           />
         </form>
+
+        <button
+          onClick={() => navigate("/notifications")}
+          title="Notifications"
+          className="relative rounded-xl border p-2.5 hover:opacity-80 transition"
+          style={{
+            borderColor: "var(--border)",
+            backgroundColor: "var(--surface)",
+            color: "var(--text-primary)",
+          }}
+        >
+          <Bell size={19} style={{ color: "var(--text-secondary)" }} />
+          {unreadCount > 0 && (
+            <span
+              className="absolute -top-1 -right-1 flex h-4 min-w-4 items-center justify-center rounded-full px-1 text-[10px] font-bold text-white"
+              style={{ backgroundColor: "#EF4444" }}
+            >
+              {unreadCount > 9 ? "9+" : unreadCount}
+            </span>
+          )}
+        </button>
 
         <button
           onClick={toggleTheme}
