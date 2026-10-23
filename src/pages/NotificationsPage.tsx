@@ -17,6 +17,8 @@ export default function NotificationsPage() {
   const currentUser = getLoggedInUser();
   const isAdmin = currentUser?.role?.toLowerCase() === "admin";
 
+  const [activeTab, setActiveTab] = useState<"inbox" | "sent">("inbox");
+
   async function loadData() {
     try {
       setLoading(true);
@@ -59,6 +61,18 @@ export default function NotificationsPage() {
   }
 
   const unreadCount = notifications.filter((n) => !n.isRead).length;
+
+  // For Admins: segregate incoming registration/system alerts from broadcast announcements
+  const displayedNotifications = notifications.filter((n) => {
+    if (!isAdmin) return true;
+    if (activeTab === "inbox") {
+      // Incoming inbox: new user registrations, user logins, and system alerts
+      return n.title.toLowerCase().includes("registered") || n.title.toLowerCase().includes("login");
+    } else {
+      // Sent broadcasts / announcements sent to library members
+      return !n.title.toLowerCase().includes("registered") && !n.title.toLowerCase().includes("login");
+    }
+  });
 
   return (
     <main
@@ -104,7 +118,9 @@ export default function NotificationsPage() {
               )}
             </h1>
             <p className="mt-1 text-xs sm:text-sm" style={{ color: "var(--text-secondary)" }}>
-              Stay updated with library announcements, broadcasts, and system updates.
+              {isAdmin
+                ? "Review incoming user registration alerts and manage broadcast announcements."
+                : "Stay updated with library announcements, broadcasts, and system updates."}
             </p>
           </div>
 
@@ -151,6 +167,47 @@ export default function NotificationsPage() {
           </div>
         </div>
 
+        {/* Admin Tabs: Segregate Inbox vs Sent Broadcasts */}
+        {isAdmin && (
+          <div
+            className="flex items-center gap-2 p-1.5 rounded-2xl border"
+            style={{
+              backgroundColor: "var(--surface)",
+              borderColor: "var(--border)",
+            }}
+          >
+            <button
+              onClick={() => setActiveTab("inbox")}
+              className={`flex-1 flex items-center justify-center gap-2 py-2 rounded-xl text-xs font-bold transition ${
+                activeTab === "inbox" ? "shadow-sm" : "opacity-70 hover:opacity-100"
+              }`}
+              style={
+                activeTab === "inbox"
+                  ? { backgroundColor: "var(--btn-primary)", color: "var(--btn-text)" }
+                  : { color: "var(--text-primary)" }
+              }
+            >
+              <UserPlus size={15} />
+              Incoming Inbox (Registrations & Alerts)
+            </button>
+
+            <button
+              onClick={() => setActiveTab("sent")}
+              className={`flex-1 flex items-center justify-center gap-2 py-2 rounded-xl text-xs font-bold transition ${
+                activeTab === "sent" ? "shadow-sm" : "opacity-70 hover:opacity-100"
+              }`}
+              style={
+                activeTab === "sent"
+                  ? { backgroundColor: "var(--btn-primary)", color: "var(--btn-text)" }
+                  : { color: "var(--text-primary)" }
+              }
+            >
+              <Radio size={15} />
+              Broadcasts & Announcements
+            </button>
+          </div>
+        )}
+
         {/* List of Notifications */}
         {loading && (
           <div className="py-20 text-center text-sm" style={{ color: "var(--text-secondary)" }}>
@@ -164,7 +221,7 @@ export default function NotificationsPage() {
           </div>
         )}
 
-        {!loading && !error && notifications.length === 0 && (
+        {!loading && !error && displayedNotifications.length === 0 && (
           <div
             className="flex flex-col items-center justify-center rounded-3xl border border-dashed py-20 text-center"
             style={{
@@ -173,14 +230,24 @@ export default function NotificationsPage() {
             }}
           >
             <Bell size={48} className="mb-3 opacity-40" style={{ color: "var(--text-secondary)" }} />
-            <h3 className="text-base font-semibold">You&apos;re all caught up!</h3>
+            <h3 className="text-base font-semibold">
+              {isAdmin && activeTab === "inbox"
+                ? "No incoming user registration alerts yet"
+                : isAdmin && activeTab === "sent"
+                ? "No broadcasts sent yet"
+                : "You're all caught up!"}
+            </h3>
             <p className="mt-1 max-w-sm text-xs" style={{ color: "var(--text-secondary)" }}>
-              No notifications right now. New announcements and alerts will appear here.
+              {isAdmin && activeTab === "inbox"
+                ? "When new users register, registration alerts will appear in this inbox."
+                : isAdmin && activeTab === "sent"
+                ? "Use the Send Broadcast button above to announce library updates to members."
+                : "No notifications right now. New announcements and alerts will appear here."}
             </p>
           </div>
         )}
 
-        {!loading && !error && notifications.length > 0 && (
+        {!loading && !error && displayedNotifications.length > 0 && (
           <div
             className="rounded-3xl border overflow-hidden shadow-sm divide-y"
             style={{
@@ -188,7 +255,7 @@ export default function NotificationsPage() {
               borderColor: "var(--border)",
             }}
           >
-            {notifications.map((item) => {
+            {displayedNotifications.map((item) => {
               const isRegisterAlert = item.title.toLowerCase().includes("user registered");
 
               return (

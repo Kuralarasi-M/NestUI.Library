@@ -12,11 +12,29 @@ export function getStoredFcmToken(): string | null {
 }
 
 /**
- * Save FCM token to backend for the logged-in user.
- * Called automatically during login and registration.
+ * Requests browser notification permission and syncs FCM token to backend only if granted.
+ * Called during login, registration, or when user enables notifications.
  */
 export async function syncFcmToken(userId: string, token?: string): Promise<boolean> {
-  const fcmToken = token || getStoredFcmToken() || `web_device_${userId.slice(0, 8)}_${Date.now()}`;
+  // If browser supports Notification API, check permission first
+  if (typeof window !== "undefined" && "Notification" in window) {
+    if (Notification.permission === "default") {
+      try {
+        const permission = await Notification.requestPermission();
+        if (permission !== "granted") {
+          console.log("[FCM] Notification permission was not granted by user:", permission);
+          return false;
+        }
+      } catch (err) {
+        console.warn("[FCM] Permission request error:", err);
+      }
+    } else if (Notification.permission === "denied") {
+      console.log("[FCM] Notification permission is blocked by user in browser settings.");
+      return false;
+    }
+  }
+
+  const fcmToken = token || getStoredFcmToken() || `web_fcm_${userId.slice(0, 8)}_${Date.now()}`;
   localStorage.setItem(FCM_TOKEN_STORAGE_KEY, fcmToken);
 
   const user = getLoggedInUser();
