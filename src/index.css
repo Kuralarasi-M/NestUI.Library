@@ -1,4 +1,3 @@
-
 @import "tailwindcss";
 
 @custom-variant dark (&:where(.dark, .dark *));
@@ -9,6 +8,39 @@
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+
+  /* Cobalt Sky Palette - Light Mode */
+  --page-bg: #F4F7FB;
+  --surface: #FFFFFF;
+  --surface-secondary: #E9EEF5;
+  --text-primary: #0A1128;
+  --text-secondary: #5C7084;
+  --border: #D1DCE8;
+  --btn-primary: #0047AB;
+  --btn-text: #FFFFFF;
+  --accent: #0047AB;
+  --accent-light: #82C8E5;
+  --link: #0047AB;
+  --input-bg: #FFFFFF;
+  --focus-ring: #82C8E5;
+}
+
+:root.dark,
+.dark {
+  /* Cobalt Sky Palette - Dark Mode (Deep Navy & Midnight Cobalt) */
+  --page-bg: #070D18;
+  --surface: #0E1726;
+  --surface-secondary: #142033;
+  --text-primary: #F0F4F8;
+  --text-secondary: #8FA2B6;
+  --border: #1E2D42;
+  --btn-primary: #82C8E5;
+  --btn-text: #070D18;
+  --accent: #82C8E5;
+  --accent-light: #0047AB;
+  --link: #82C8E5;
+  --input-bg: #0E1726;
+  --focus-ring: #82C8E5;
 }
 
 * {
@@ -19,9 +51,38 @@ body {
   margin: 0;
   min-width: 320px;
   min-height: 100vh;
+  background-color: var(--page-bg);
+  color: var(--text-primary);
+  transition: background-color 0.25s ease, color 0.25s ease;
+}
+
+.dark body {
+  background-color: var(--page-bg);
+  color: var(--text-primary);
+}
+
+/* Custom scrollbar in Cobalt Sky theme */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--page-bg);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--border);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--accent);
 }
 
 button,
-input {
+input,
+select,
+textarea {
   font: inherit;
 }

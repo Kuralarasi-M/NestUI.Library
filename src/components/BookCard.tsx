@@ -15,27 +15,32 @@ export default function BookCard({ book, isFavorite = false, onToggleFavorite }:
   return (
     <article
       onClick={() => navigate(`/books/${book.gutendexId}`)}
-      className="group cursor-pointer overflow-hidden rounded-2xl
-        border border-slate-200 bg-white transition
-        hover:-translate-y-1 hover:shadow-lg
-        dark:border-white/10 dark:bg-gray-900"
+      className="group cursor-pointer overflow-hidden rounded-2xl border transition hover:-translate-y-1 hover:shadow-lg"
+      style={{
+        backgroundColor: "var(--surface)",
+        borderColor: "var(--border)",
+        color: "var(--text-primary)",
+      }}
     >
-      <div className="flex h-56 items-center justify-center bg-slate-100 dark:bg-gray-800">
+      <div
+        className="flex h-56 items-center justify-center p-3"
+        style={{ backgroundColor: "var(--surface-secondary)" }}
+      >
         {book.coverImage ? (
           <img
             src={book.coverImage}
             alt={`Cover of ${book.title}`}
             loading="lazy"
-            className="h-full w-full object-contain"
+            className="h-full w-full object-contain rounded-md"
           />
         ) : (
-          <BookOpen size={48} className="text-slate-400" />
+          <BookOpen size={48} style={{ color: "var(--text-secondary)" }} />
         )}
       </div>
 
       <div className="p-4">
         <div className="flex items-start justify-between gap-2">
-          <h3 className="line-clamp-2 font-semibold">{book.title}</h3>
+          <h3 className="line-clamp-2 font-semibold text-sm leading-snug">{book.title}</h3>
           <button
             type="button"
             aria-label={isFavorite ? "Remove from favorites" : "Add to favorites"}
@@ -46,22 +51,23 @@ export default function BookCard({ book, isFavorite = false, onToggleFavorite }:
             className={`shrink-0 p-1.5 rounded-full transition ${
               isFavorite
                 ? "text-rose-500 bg-rose-50 dark:bg-rose-950/40"
-                : "text-slate-400 hover:text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-950/30"
+                : "hover:text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-950/30"
             }`}
+            style={!isFavorite ? { color: "var(--text-secondary)" } : {}}
           >
             <Heart size={18} fill={isFavorite ? "currentColor" : "none"} />
           </button>
         </div>
 
-        <p className="mt-2 truncate text-sm text-slate-500 dark:text-slate-400">
+        <p className="mt-1.5 truncate text-xs" style={{ color: "var(--text-secondary)" }}>
           {book.author}
         </p>
 
-        <p className="mt-3 line-clamp-2 text-xs text-slate-500 dark:text-slate-400">
+        <p className="mt-2.5 line-clamp-2 text-[11px]" style={{ color: "var(--text-secondary)" }}>
           {book.genre}
         </p>
 
-        <p className="mt-3 text-xs text-indigo-600 dark:text-indigo-400">
+        <p className="mt-3 text-xs font-medium" style={{ color: "var(--link)" }}>
           {book.downloadCount.toLocaleString()} downloads
         </p>
       </div>

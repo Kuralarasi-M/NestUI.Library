@@ -54,45 +54,63 @@ export default function Sidebar({ open, onClose }: SidebarProps) {
 
       <aside
         className={`fixed inset-y-0 left-0 z-50 flex w-64 flex-col
-          border-r border-slate-200 bg-white p-5
-          transition-transform duration-300
-          dark:border-white/10 dark:bg-gray-900
+          border-r p-5 transition-transform duration-300
           ${open ? "translate-x-0" : "-translate-x-full"}
           lg:translate-x-0`}
+        style={{
+          backgroundColor: "var(--surface)",
+          borderColor: "var(--border)",
+          color: "var(--text-primary)",
+        }}
       >
         <div className="mb-9 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="rounded-xl bg-indigo-600 p-2 text-white">
+            <div
+              className="rounded-xl p-2"
+              style={{ backgroundColor: "var(--btn-primary)", color: "var(--btn-text)" }}
+            >
               <BookOpen size={24} />
             </div>
-            <span className="text-lg font-bold">BookNest</span>
+            <span className="text-lg font-bold tracking-tight">BookNest</span>
           </div>
 
           <button
             onClick={onClose}
             aria-label="Close menu"
-            className="rounded-lg p-2 hover:bg-slate-100 dark:hover:bg-white/10 lg:hidden"
+            className="rounded-lg p-2 hover:opacity-80 transition lg:hidden"
+            style={{ color: "var(--text-secondary)" }}
           >
             <X size={20} />
           </button>
         </div>
 
-        <p className="mb-3 text-xs font-semibold uppercase tracking-widest text-slate-400">
+        <p
+          className="mb-3 text-xs font-semibold uppercase tracking-widest"
+          style={{ color: "var(--text-secondary)" }}
+        >
           Your Library
         </p>
 
-        <nav className="space-y-2">
+        <nav className="space-y-1.5">
           {links.map(({ to, label, icon: Icon }) => (
             <NavLink
               key={to}
               to={to}
               end={to === "/"}
               onClick={onClose}
+              style={({ isActive }) =>
+                isActive
+                  ? {
+                      backgroundColor: "var(--btn-primary)",
+                      color: "var(--btn-text)",
+                    }
+                  : {}
+              }
               className={({ isActive }) =>
-                `flex items-center gap-3 rounded-xl px-3 py-3 text-sm font-medium transition ${
+                `flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition ${
                   isActive
-                    ? "bg-indigo-600 text-white"
-                    : "text-slate-600 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-white/10"
+                    ? "shadow-sm font-semibold"
+                    : "hover:opacity-90"
                 }`
               }
             >
@@ -103,29 +121,55 @@ export default function Sidebar({ open, onClose }: SidebarProps) {
         </nav>
 
         <div className="mt-auto space-y-3">
-          <div className="rounded-xl bg-indigo-50 p-4 dark:bg-indigo-500/10">
-            <BookOpen className="mb-2 text-indigo-600 dark:text-indigo-400" />
+          <div
+            className="rounded-xl p-4 border"
+            style={{
+              backgroundColor: "var(--surface-secondary)",
+              borderColor: "var(--border)",
+            }}
+          >
+            <BookOpen
+              className="mb-2"
+              size={20}
+              style={{ color: "var(--accent)" }}
+            />
             <p className="text-sm font-semibold">Public Domain Library</p>
-            <p className="mt-1 text-xs text-slate-500 dark:text-slate-400 leading-relaxed">
+            <p
+              className="mt-1 text-xs leading-relaxed"
+              style={{ color: "var(--text-secondary)" }}
+            >
               Non-copyright public domain books alone are available here to read.
             </p>
           </div>
 
           {currentUser ? (
-            <div className="flex items-center justify-between rounded-xl border border-slate-200 bg-slate-50 p-3 dark:border-white/10 dark:bg-white/5">
+            <div
+              className="flex items-center justify-between rounded-xl border p-3"
+              style={{
+                backgroundColor: "var(--surface-secondary)",
+                borderColor: "var(--border)",
+              }}
+            >
               <div className="flex items-center gap-2 overflow-hidden">
-                <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-indigo-600 text-xs font-bold text-white">
+                <div
+                  className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-xs font-bold"
+                  style={{
+                    backgroundColor: "var(--btn-primary)",
+                    color: "var(--btn-text)",
+                  }}
+                >
                   {currentUser.role?.[0]?.toUpperCase() || "U"}
                 </div>
                 <div className="truncate text-xs">
                   <p className="font-semibold truncate">{currentUser.role || "Member"}</p>
-                  <p className="text-slate-400 text-[10px]">Active</p>
+                  <p className="text-[10px]" style={{ color: "var(--text-secondary)" }}>Active</p>
                 </div>
               </div>
               <button
                 onClick={handleLogout}
                 title="Log out"
-                className="rounded-lg p-1.5 text-slate-500 hover:bg-slate-200 hover:text-red-600 dark:hover:bg-white/10 dark:hover:text-red-400 transition"
+                className="rounded-lg p-1.5 hover:opacity-80 transition"
+                style={{ color: "var(--text-secondary)" }}
               >
                 <LogOut size={16} />
               </button>
@@ -134,10 +178,14 @@ export default function Sidebar({ open, onClose }: SidebarProps) {
             <NavLink
               to="/login"
               onClick={onClose}
-              className="flex items-center justify-center gap-2 rounded-xl bg-indigo-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-indigo-700"
+              className="flex items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold shadow-sm transition hover:opacity-90"
+              style={{
+                backgroundColor: "var(--btn-primary)",
+                color: "var(--btn-text)",
+              }}
             >
               <LogIn size={16} />
-              Log Out
+              Log In
             </NavLink>
           )}
         </div>

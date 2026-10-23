@@ -55,22 +55,22 @@ const readerThemes = {
     chapterHeading: "text-[#5C3D2E]",
   },
   dark: {
-    bg: "bg-[#121316]",
-    bookBg: "bg-[#1C1E24]",
-    bookBorder: "border-white/10",
-    bookShadow: "shadow-[0_25px_60px_rgba(0,0,0,0.7)]",
-    spine: "from-black/40 via-black/20 to-transparent",
+    bg: "bg-[#070D18]",
+    bookBg: "bg-[#0E1726]",
+    bookBorder: "border-[#1E2D42]",
+    bookShadow: "shadow-[0_25px_60px_rgba(0,0,0,0.8)]",
+    spine: "from-black/50 via-black/25 to-transparent",
     centerCrease: "border-white/5",
-    text: "text-[#DCDAD5]",
-    muted: "text-slate-400",
-    pageNumber: "text-slate-500",
-    toolbar: "bg-[#1C1E24]/90 border-white/10 text-white",
-    sidebar: "bg-[#1C1E24] border-white/10 text-white",
-    control: "bg-[#282B34] hover:bg-[#343844] text-white",
-    active: "bg-indigo-600 text-white",
-    progress: "bg-indigo-400",
-    track: "bg-white/10",
-    chapterHeading: "text-indigo-300",
+    text: "text-[#F0F4F8]",
+    muted: "text-[#8FA2B6]",
+    pageNumber: "text-[#6D8196]",
+    toolbar: "bg-[#0E1726]/95 border-[#1E2D42] text-[#F0F4F8]",
+    sidebar: "bg-[#0E1726] border-[#1E2D42] text-[#F0F4F8]",
+    control: "bg-[#142033] hover:bg-[#1E2D42] text-[#F0F4F8]",
+    active: "bg-[#0047AB] text-white",
+    progress: "bg-[#82C8E5]",
+    track: "bg-[#1E2D42]",
+    chapterHeading: "text-[#82C8E5]",
   },
   sepia: {
     bg: "bg-[#E6D7BD]",
@@ -468,8 +468,6 @@ export default function BookReaderPage() {
       localStorage.setItem(`reader-bookmark-${gutendexId}`, String(nextVal));
     }
   }
-
-  const progressPercentage = Math.round(((currentPage + 1) / totalPages) * 100);
 
   // Render a PDF-style structured page
   const renderBookPage = (pageIndex: number, _side: "left" | "right" | "single") => {

@@ -182,22 +182,44 @@ export default function DiscoverPage() {
   }, [books, query, selectedGenre, selectedLanguage, sortBy]);
 
   return (
-    <main className="min-h-screen bg-slate-50 text-slate-900 dark:bg-gray-950 dark:text-white">
+    <main
+      className="min-h-screen"
+      style={{
+        backgroundColor: "var(--page-bg)",
+        color: "var(--text-primary)",
+      }}
+    >
       {/* Top Header with Search input */}
-      <header className="sticky top-0 z-30 flex items-center justify-between gap-3 border-b border-slate-200 bg-white/90 p-4 backdrop-blur dark:border-white/10 dark:bg-gray-950/90 sm:px-8">
+      <header
+        className="sticky top-0 z-30 flex items-center justify-between gap-3 border-b p-4 backdrop-blur sm:px-8"
+        style={{
+          backgroundColor: "var(--surface)",
+          borderColor: "var(--border)",
+        }}
+      >
         <form onSubmit={handleSearchSubmit} className="relative flex-1 max-w-2xl">
-          <Search size={18} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
+          <Search
+            size={18}
+            className="absolute left-3.5 top-1/2 -translate-y-1/2"
+            style={{ color: "var(--text-secondary)" }}
+          />
           <input
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             placeholder="Search by title or author (e.g. 'harry potter', 'Jane Austen')..."
-            className="w-full rounded-2xl border border-slate-200 bg-slate-50 py-2.5 pl-11 pr-10 text-sm text-slate-900 placeholder:text-slate-400 outline-none focus:border-indigo-500 focus:bg-white dark:border-white/10 dark:bg-gray-900 dark:text-white dark:placeholder:text-slate-500 dark:focus:bg-gray-900"
+            className="w-full rounded-2xl border py-2.5 pl-11 pr-10 text-sm outline-none transition"
+            style={{
+              backgroundColor: "var(--input-bg)",
+              borderColor: "var(--border)",
+              color: "var(--text-primary)",
+            }}
           />
           {query && (
             <button
               type="button"
               onClick={handleClearSearch}
-              className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-white"
+              className="absolute right-3.5 top-1/2 -translate-y-1/2 hover:opacity-80 transition"
+              style={{ color: "var(--text-secondary)" }}
             >
               <X size={16} />
             </button>
@@ -207,9 +229,18 @@ export default function DiscoverPage() {
         <button
           onClick={toggleTheme}
           aria-label="Toggle theme"
-          className="rounded-xl border border-slate-200 p-2.5 dark:border-white/10"
+          className="rounded-xl border p-2.5 hover:opacity-80 transition"
+          style={{
+            borderColor: "var(--border)",
+            backgroundColor: "var(--surface)",
+            color: "var(--text-primary)",
+          }}
         >
-          {theme === "dark" ? <Sun size={19} /> : <Moon size={19} />}
+          {theme === "dark" ? (
+            <Sun size={19} style={{ color: "var(--accent)" }} />
+          ) : (
+            <Moon size={19} style={{ color: "var(--text-secondary)" }} />
+          )}
         </button>
       </header>
 
@@ -218,19 +249,19 @@ export default function DiscoverPage() {
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
           <div>
             <h1 className="text-2xl sm:text-3xl font-extrabold flex items-center gap-2.5">
-              <Compass className="text-indigo-600 dark:text-indigo-400" />
+              <Compass style={{ color: "var(--accent)" }} />
               Discover & Search
             </h1>
-            <p className="mt-1 text-xs sm:text-sm text-slate-500 dark:text-slate-400">
+            <p className="mt-1 text-xs sm:text-sm" style={{ color: "var(--text-secondary)" }}>
               {query ? (
                 <span>
-                  Showing results for <span className="font-semibold text-indigo-600 dark:text-indigo-400">&ldquo;{query}&rdquo;</span> ({filteredBooks.length} books found)
+                  Showing results for <span className="font-semibold" style={{ color: "var(--accent)" }}>&ldquo;{query}&rdquo;</span> ({filteredBooks.length} books found)
                 </span>
               ) : (
                 `Explore ${books.length} books available in the library catalog.`
               )}
             </p>
-            <p className="mt-1 text-[11px] font-medium text-emerald-600 dark:text-emerald-400">
+            <p className="mt-1 text-[11px] font-medium" style={{ color: "var(--link)" }}>
               • Non-copyright public domain books alone are available here to read.
             </p>
           </div>
@@ -238,15 +269,25 @@ export default function DiscoverPage() {
           {/* Quick links to search history */}
           <button
             onClick={() => navigate("/search-history")}
-            className="text-xs font-semibold text-indigo-600 hover:underline dark:text-indigo-400 self-start sm:self-auto"
+            className="text-xs font-semibold hover:underline self-start sm:self-auto"
+            style={{ color: "var(--link)" }}
           >
             Recent searches &rarr;
           </button>
         </div>
 
         {/* Filter Toolbar: Language, Genre, Sort */}
-        <div className="flex flex-wrap items-center gap-3 p-4 rounded-2xl border border-slate-200 bg-white dark:border-white/10 dark:bg-gray-900">
-          <div className="flex items-center gap-1.5 text-xs font-bold text-slate-400 uppercase tracking-wider">
+        <div
+          className="flex flex-wrap items-center gap-3 p-4 rounded-2xl border transition"
+          style={{
+            backgroundColor: "var(--surface)",
+            borderColor: "var(--border)",
+          }}
+        >
+          <div
+            className="flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider"
+            style={{ color: "var(--text-secondary)" }}
+          >
             <Filter size={14} /> Filter:
           </div>
 
@@ -254,7 +295,12 @@ export default function DiscoverPage() {
           <select
             value={selectedLanguage}
             onChange={(e) => setSelectedLanguage(e.target.value)}
-            className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-1.5 text-xs font-medium outline-none focus:border-indigo-500 dark:border-white/10 dark:bg-gray-800"
+            className="rounded-xl border px-3 py-1.5 text-xs font-medium outline-none transition"
+            style={{
+              backgroundColor: "var(--input-bg)",
+              borderColor: "var(--border)",
+              color: "var(--text-primary)",
+            }}
           >
             <option value="all">All Languages</option>
             <option value="en">English (en)</option>
@@ -267,7 +313,12 @@ export default function DiscoverPage() {
           <select
             value={selectedGenre}
             onChange={(e) => setSelectedGenre(e.target.value)}
-            className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-1.5 text-xs font-medium outline-none focus:border-indigo-500 dark:border-white/10 dark:bg-gray-800 max-w-[200px]"
+            className="rounded-xl border px-3 py-1.5 text-xs font-medium outline-none max-w-[200px] transition"
+            style={{
+              backgroundColor: "var(--input-bg)",
+              borderColor: "var(--border)",
+              color: "var(--text-primary)",
+            }}
           >
             <option value="All">All Topics / Genres</option>
             <option value="fiction">Fiction</option>
@@ -293,14 +344,20 @@ export default function DiscoverPage() {
               value={bookIds}
               onChange={(e) => setBookIds(e.target.value)}
               placeholder="Filter IDs: 1342, 11, 84"
-              className="w-36 rounded-xl border border-slate-200 bg-slate-50 px-2.5 py-1.5 text-xs font-mono placeholder:text-slate-400 outline-none focus:border-indigo-500 dark:border-white/10 dark:bg-gray-800"
+              className="w-36 rounded-xl border px-2.5 py-1.5 text-xs font-mono outline-none transition"
+              style={{
+                backgroundColor: "var(--input-bg)",
+                borderColor: "var(--border)",
+                color: "var(--text-primary)",
+              }}
               title="Filter by specific Gutenberg Book IDs (comma-separated, e.g. 1342, 11, 84)"
             />
             {bookIds && (
               <button
                 type="button"
                 onClick={() => setBookIds("")}
-                className="text-slate-400 hover:text-slate-600 dark:hover:text-white"
+                className="hover:opacity-80 transition"
+                style={{ color: "var(--text-secondary)" }}
                 title="Clear ID filter"
               >
                 <X size={14} />
@@ -310,11 +367,18 @@ export default function DiscoverPage() {
 
           {/* Sort selector */}
           <div className="ml-auto flex items-center gap-2">
-            <span className="text-xs text-slate-400 font-medium">Sort by:</span>
+            <span className="text-xs font-medium" style={{ color: "var(--text-secondary)" }}>
+              Sort by:
+            </span>
             <select
               value={sortBy}
               onChange={(e) => setSortBy(e.target.value as any)}
-              className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-1.5 text-xs font-medium outline-none focus:border-indigo-500 dark:border-white/10 dark:bg-gray-800"
+              className="rounded-xl border px-3 py-1.5 text-xs font-medium outline-none transition"
+              style={{
+                backgroundColor: "var(--input-bg)",
+                borderColor: "var(--border)",
+                color: "var(--text-primary)",
+              }}
             >
               <option value="popular">Most Popular</option>
               <option value="title">Title (A-Z)</option>

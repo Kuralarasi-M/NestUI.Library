@@ -144,12 +144,25 @@ export default function Dashboard({ onOpenMenu }: DashboardProps) {
   }
 
   return (
-    <main className="min-h-screen bg-slate-50 text-slate-900 dark:bg-gray-950 dark:text-white">
-      <header className="sticky top-0 z-30 flex items-center gap-3 border-b border-slate-200 bg-white/90 p-4 backdrop-blur dark:border-white/10 dark:bg-gray-950/90 sm:px-7">
+    <main
+      className="min-h-screen"
+      style={{
+        backgroundColor: "var(--page-bg)",
+        color: "var(--text-primary)",
+      }}
+    >
+      <header
+        className="sticky top-0 z-30 flex items-center gap-3 border-b p-4 backdrop-blur sm:px-7"
+        style={{
+          backgroundColor: "var(--surface)",
+          borderColor: "var(--border)",
+        }}
+      >
         <button
           onClick={onOpenMenu}
           aria-label="Open navigation"
-          className="rounded-lg p-2 hover:bg-slate-100 dark:hover:bg-white/10 lg:hidden"
+          className="rounded-lg p-2 hover:opacity-80 transition lg:hidden"
+          style={{ color: "var(--text-secondary)" }}
         >
           <Menu size={21} />
         </button>
@@ -157,14 +170,20 @@ export default function Dashboard({ onOpenMenu }: DashboardProps) {
         <form onSubmit={handleSearchSubmit} className="relative max-w-xl flex-1">
           <Search
             size={18}
-            className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"
+            className="absolute left-3.5 top-1/2 -translate-y-1/2"
+            style={{ color: "var(--text-secondary)" }}
           />
 
           <input
             value={search}
             onChange={(event) => handleSearchChange(event.target.value)}
             placeholder="Search books, authors, genres... (Press Enter to search)"
-            className="w-full rounded-xl border border-slate-200 bg-slate-50 py-2.5 pl-10 pr-3 text-sm text-slate-900 placeholder:text-slate-400 outline-none focus:border-indigo-500 focus:bg-white dark:border-white/10 dark:bg-gray-900 dark:text-white dark:placeholder:text-slate-500 dark:focus:bg-gray-900"
+            className="w-full rounded-xl border py-2.5 pl-10 pr-3 text-sm outline-none transition"
+            style={{
+              backgroundColor: "var(--input-bg)",
+              borderColor: "var(--border)",
+              color: "var(--text-primary)",
+            }}
           />
         </form>
 
@@ -180,19 +199,31 @@ export default function Dashboard({ onOpenMenu }: DashboardProps) {
               ? "Switch to light theme"
               : "Switch to dark theme"
           }
-          className="rounded-xl border border-slate-200 p-2.5 dark:border-white/10"
+          className="rounded-xl border p-2.5 hover:opacity-80 transition"
+          style={{
+            borderColor: "var(--border)",
+            backgroundColor: "var(--surface)",
+            color: "var(--text-primary)",
+          }}
         >
           {theme === "dark" ? (
-            <Sun size={19} />
+            <Sun size={19} style={{ color: "var(--accent)" }} />
           ) : (
-            <Moon size={19} />
+            <Moon size={19} style={{ color: "var(--text-secondary)" }} />
           )}
         </button>
       </header>
 
       <div className="mx-auto max-w-7xl space-y-8 p-4 sm:p-7">
-        <section className="rounded-3xl bg-gradient-to-r from-indigo-700 to-violet-600 p-6 text-white sm:p-9">
-          <p className="text-sm text-indigo-100">
+        <section
+          className="rounded-3xl p-6 sm:p-9 shadow-sm border transition"
+          style={{
+            backgroundColor: "var(--btn-primary)",
+            color: "var(--btn-text)",
+            borderColor: "var(--border)",
+          }}
+        >
+          <p className="text-xs uppercase tracking-widest font-semibold opacity-85">
             YOUR PERSONAL LIBRARY
           </p>
 
@@ -200,12 +231,18 @@ export default function Dashboard({ onOpenMenu }: DashboardProps) {
             Every book opens a new world.
           </h1>
 
-          <p className="mt-3 max-w-xl text-sm leading-6 text-indigo-100">
+          <p className="mt-3 max-w-xl text-sm leading-6 opacity-90">
             Discover stories, explore genres, and find your next
             favorite book.
           </p>
 
-          <div className="mt-4 inline-flex items-center gap-2 rounded-xl bg-white/15 px-3.5 py-1.5 text-xs font-medium text-white backdrop-blur-sm border border-white/20">
+          <div
+            className="mt-4 inline-flex items-center gap-2 rounded-xl px-3.5 py-1.5 text-xs font-medium border"
+            style={{
+              backgroundColor: "rgba(0, 0, 0, 0.15)",
+              borderColor: "rgba(255, 255, 255, 0.2)",
+            }}
+          >
             <span className="flex h-2 w-2 rounded-full bg-emerald-400 animate-pulse" />
             <span>Non-copyright public domain books alone are available here to read.</span>
           </div>
@@ -216,12 +253,13 @@ export default function Dashboard({ onOpenMenu }: DashboardProps) {
           <section className="space-y-3">
             <div className="flex items-center justify-between">
               <h2 className="text-lg font-bold flex items-center gap-2">
-                <BookOpen size={20} className="text-indigo-600 dark:text-indigo-400" />
+                <BookOpen size={20} style={{ color: "var(--accent)" }} />
                 Continue Reading
               </h2>
               <button
                 onClick={() => navigate("/history")}
-                className="text-xs font-semibold text-indigo-600 hover:underline dark:text-indigo-400"
+                className="text-xs font-semibold hover:underline"
+                style={{ color: "var(--link)" }}
               >
                 View all history &rarr;
               </button>
@@ -232,7 +270,11 @@ export default function Dashboard({ onOpenMenu }: DashboardProps) {
                 <div
                   key={item.id}
                   onClick={() => navigate(`/read/${item.book.gutendexId || item.book.id}`)}
-                  className="flex items-center gap-3.5 p-3.5 rounded-2xl border border-slate-200 bg-white hover:border-indigo-500/50 hover:shadow-md cursor-pointer transition dark:border-white/10 dark:bg-gray-900"
+                  className="flex items-center gap-3.5 p-3.5 rounded-2xl border cursor-pointer transition hover:shadow-md"
+                  style={{
+                    backgroundColor: "var(--surface)",
+                    borderColor: "var(--border)",
+                  }}
                 >
                   {item.book.coverImage ? (
                     <img
@@ -241,14 +283,22 @@ export default function Dashboard({ onOpenMenu }: DashboardProps) {
                       className="h-16 w-11 rounded-lg object-cover shrink-0 shadow-sm"
                     />
                   ) : (
-                    <div className="h-16 w-11 rounded-lg bg-indigo-50 dark:bg-indigo-950/50 flex items-center justify-center shrink-0 text-indigo-600">
+                    <div
+                      className="h-16 w-11 rounded-lg flex items-center justify-center shrink-0"
+                      style={{
+                        backgroundColor: "var(--surface-secondary)",
+                        color: "var(--accent)",
+                      }}
+                    >
                       <BookOpen size={20} />
                     </div>
                   )}
                   <div className="truncate">
                     <h4 className="font-bold text-xs truncate">{item.book.title}</h4>
-                    <p className="text-[11px] text-slate-500 truncate mt-0.5">{item.book.author}</p>
-                    <span className="mt-2 inline-flex items-center gap-1 text-[10px] font-semibold text-indigo-600 dark:text-indigo-400">
+                    <p className="text-[11px] truncate mt-0.5" style={{ color: "var(--text-secondary)" }}>
+                      {item.book.author}
+                    </p>
+                    <span className="mt-2 inline-flex items-center gap-1 text-[10px] font-semibold" style={{ color: "var(--link)" }}>
                       Resume &rarr;
                     </span>
                   </div>
@@ -259,8 +309,14 @@ export default function Dashboard({ onOpenMenu }: DashboardProps) {
         )}
 
         <section className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-          <div className="rounded-2xl border border-slate-200 bg-white p-5 dark:border-white/10 dark:bg-gray-900">
-            <p className="text-sm text-slate-500">
+          <div
+            className="rounded-2xl border p-5 transition"
+            style={{
+              backgroundColor: "var(--surface)",
+              borderColor: "var(--border)",
+            }}
+          >
+            <p className="text-xs uppercase font-medium tracking-wider" style={{ color: "var(--text-secondary)" }}>
               Books available
             </p>
             <p className="mt-2 text-3xl font-bold">
@@ -268,8 +324,16 @@ export default function Dashboard({ onOpenMenu }: DashboardProps) {
             </p>
           </div>
 
-          <div className="rounded-2xl border border-slate-200 bg-white p-5 dark:border-white/10 dark:bg-gray-900">
-            <p className="text-sm text-slate-500">Genres</p>
+          <div
+            className="rounded-2xl border p-5 transition"
+            style={{
+              backgroundColor: "var(--surface)",
+              borderColor: "var(--border)",
+            }}
+          >
+            <p className="text-xs uppercase font-medium tracking-wider" style={{ color: "var(--text-secondary)" }}>
+              Genres
+            </p>
             <p className="mt-2 text-3xl font-bold">
               {
                 new Set(
@@ -283,8 +347,14 @@ export default function Dashboard({ onOpenMenu }: DashboardProps) {
             </p>
           </div>
 
-          <div className="rounded-2xl border border-slate-200 bg-white p-5 dark:border-white/10 dark:bg-gray-900">
-            <p className="text-sm text-slate-500">
+          <div
+            className="rounded-2xl border p-5 transition"
+            style={{
+              backgroundColor: "var(--surface)",
+              borderColor: "var(--border)",
+            }}
+          >
+            <p className="text-xs uppercase font-medium tracking-wider" style={{ color: "var(--text-secondary)" }}>
               Total downloads
             </p>
             <p className="mt-2 text-3xl font-bold">
@@ -302,14 +372,14 @@ export default function Dashboard({ onOpenMenu }: DashboardProps) {
           <div className="mb-5 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
             <div>
               <h2 className="text-xl font-bold">Discover books</h2>
-              <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
+              <p className="mt-1 text-xs" style={{ color: "var(--text-secondary)" }}>
                 Browse your library and select a book to see its details.
               </p>
             </div>
 
             {/* Language filter pills */}
             <div className="flex items-center gap-2 overflow-x-auto pb-1">
-              <span className="flex items-center gap-1 text-xs font-semibold text-slate-400 shrink-0">
+              <span className="flex items-center gap-1 text-xs font-semibold shrink-0" style={{ color: "var(--text-secondary)" }}>
                 <Languages size={15} /> Language:
               </span>
               {[
@@ -322,11 +392,19 @@ export default function Dashboard({ onOpenMenu }: DashboardProps) {
                 <button
                   key={lang.code}
                   onClick={() => setSelectedLanguage(lang.code)}
-                  className={`rounded-xl px-3 py-1.5 text-xs font-semibold whitespace-nowrap transition ${
+                  style={
                     selectedLanguage === lang.code
-                      ? "bg-indigo-600 text-white shadow-sm"
-                      : "bg-slate-200/70 hover:bg-slate-300 dark:bg-white/10 dark:hover:bg-white/15"
-                  }`}
+                      ? {
+                          backgroundColor: "var(--btn-primary)",
+                          color: "var(--btn-text)",
+                        }
+                      : {
+                          backgroundColor: "var(--surface-secondary)",
+                          color: "var(--text-primary)",
+                          borderColor: "var(--border)",
+                        }
+                  }
+                  className="rounded-xl px-3 py-1.5 text-xs font-semibold whitespace-nowrap border transition hover:opacity-90"
                 >
                   {lang.label}
                 </button>
