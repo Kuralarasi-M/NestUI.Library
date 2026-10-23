@@ -1,14 +1,55 @@
 import { getLoggedInUser } from "./authServices";
+import { getFirebaseMessaging, getToken } from "../firebaseConfig";
 
 const BACKEND_URL = import.meta.env.VITE_API_BASE_URL || "https://localhost:7062";
 const AUTH_URL = `${BACKEND_URL}/api/Auth`;
 const FCM_TOKEN_STORAGE_KEY = "fcm_device_token";
 
 /**
- * Returns the device FCM token from storage, or creates a mock token if Firebase Web SDK is not configured.
+ * Returns the device FCM token from storage.
  */
 export function getStoredFcmToken(): string | null {
   return localStorage.getItem(FCM_TOKEN_STORAGE_KEY);
+}
+
+/**
+ * Requests browser notification permission and retrieves a real FCM registration token via Firebase Web SDK.
+ */
+export async function requestAndRegisterFcmToken(): Promise<string | null> {
+  if (typeof window === "undefined" || !("Notification" in window)) {
+    console.log("[FCM] Push notifications are not supported by this browser.");
+    return null;
+  }
+
+  const permission = await Notification.requestPermission();
+  if (permission !== "granted") {
+    console.log("[FCM] Notification permission was not granted:", permission);
+    return null;
+  }
+
+  try {
+    const messaging = getFirebaseMessaging();
+    if (!messaging) return null;
+
+    // Register service worker if needed
+    let swRegistration: ServiceWorkerRegistration | undefined;
+    if ("serviceWorker" in navigator) {
+      swRegistration = await navigator.serviceWorker.register("/firebase-messaging-sw.js");
+    }
+
+    const token = await getToken(messaging, {
+      serviceWorkerRegistration: swRegistration,
+    });
+
+    if (token) {
+      localStorage.setItem(FCM_TOKEN_STORAGE_KEY, token);
+      return token;
+    }
+  } catch (err) {
+    console.warn("[FCM] Could not get FCM registration token from Firebase SDK:", err);
+  }
+
+  return getStoredFcmToken();
 }
 
 /**
@@ -16,26 +57,15 @@ export function getStoredFcmToken(): string | null {
  * Called during login, registration, or when user enables notifications.
  */
 export async function syncFcmToken(userId: string, token?: string): Promise<boolean> {
-  // If browser supports Notification API, check permission first
-  if (typeof window !== "undefined" && "Notification" in window) {
-    if (Notification.permission === "default") {
-      try {
-        const permission = await Notification.requestPermission();
-        if (permission !== "granted") {
-          console.log("[FCM] Notification permission was not granted by user:", permission);
-          return false;
-        }
-      } catch (err) {
-        console.warn("[FCM] Permission request error:", err);
-      }
-    } else if (Notification.permission === "denied") {
-      console.log("[FCM] Notification permission is blocked by user in browser settings.");
-      return false;
-    }
+  let fcmToken = token;
+  if (!fcmToken) {
+    fcmToken = (await requestAndRegisterFcmToken()) || undefined;
   }
 
-  const fcmToken = token || getStoredFcmToken() || `web_fcm_${userId.slice(0, 8)}_${Date.now()}`;
-  localStorage.setItem(FCM_TOKEN_STORAGE_KEY, fcmToken);
+  if (!fcmToken) {
+    console.log("[FCM] No valid registration token available to sync.");
+    return false;
+  }
 
   const user = getLoggedInUser();
   const authToken = user?.token || "";
