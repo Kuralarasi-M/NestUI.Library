@@ -1,3 +1,5 @@
+import { getLoggedInUser } from "./authServices";
+
 const BACKEND_URL = import.meta.env.VITE_API_BASE_URL || "https://localhost:7062";
 const API_BASE_URL = `${BACKEND_URL}/api/Notifications`;
 
@@ -22,7 +24,8 @@ export interface BroadcastResponse {
 }
 
 function getAuthHeaders(): HeadersInit {
-  const token = localStorage.getItem("library_token") || "";
+  const user = getLoggedInUser();
+  const token = user?.token || "";
   return {
     "Content-Type": "application/json",
     ...(token ? { Authorization: `Bearer ${token}` } : {}),

@@ -1,3 +1,5 @@
+import { getLoggedInUser } from "./authServices";
+
 const BACKEND_URL = import.meta.env.VITE_API_BASE_URL || "https://localhost:7062";
 const AUTH_URL = `${BACKEND_URL}/api/Auth`;
 const FCM_TOKEN_STORAGE_KEY = "fcm_device_token";
@@ -17,7 +19,8 @@ export async function syncFcmToken(userId: string, token?: string): Promise<bool
   const fcmToken = token || getStoredFcmToken() || `web_device_${userId.slice(0, 8)}_${Date.now()}`;
   localStorage.setItem(FCM_TOKEN_STORAGE_KEY, fcmToken);
 
-  const authToken = localStorage.getItem("library_token") || "";
+  const user = getLoggedInUser();
+  const authToken = user?.token || "";
 
   try {
     const response = await fetch(`${AUTH_URL}/FCMToken`, {
@@ -44,7 +47,8 @@ export async function syncFcmToken(userId: string, token?: string): Promise<bool
  */
 export async function removeFcmToken(userId: string): Promise<boolean> {
   const fcmToken = getStoredFcmToken();
-  const authToken = localStorage.getItem("library_token") || "";
+  const user = getLoggedInUser();
+  const authToken = user?.token || "";
 
   try {
     const response = await fetch(`${AUTH_URL}/RemoveFCMToken`, {
