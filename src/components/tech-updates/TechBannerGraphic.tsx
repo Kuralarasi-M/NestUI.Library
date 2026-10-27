@@ -37,8 +37,8 @@ export default function TechBannerGraphic() {
       {/* Background Soft Glow */}
       <div className="absolute w-72 h-24 rounded-full bg-blue-500/10 dark:bg-cyan-500/10 blur-2xl pointer-events-none" />
 
-      {/* Left Uneven Pill Cluster */}
-      <div className="hidden lg:flex flex-col gap-2 w-32 justify-center z-10">
+      {/* Left Uneven Pill Cluster (Visible on tablet & desktop) */}
+      <div className="hidden sm:flex flex-col gap-2 w-28 md:w-32 justify-center z-10">
         {leftPills.map((pill, idx) => (
           <div
             key={idx}
@@ -53,8 +53,8 @@ export default function TechBannerGraphic() {
         ))}
       </div>
 
-      {/* Center Lottie - Crystal Clear SVG Rendering (No Blur) */}
-      <div className="relative z-10 w-44 sm:w-52 h-40 sm:h-44 flex items-center justify-center mx-2 drop-shadow-xl overflow-visible lottie-sharp">
+      {/* Center Lottie - Crystal Clear SVG Rendering (Visible on all screens) */}
+      <div className="relative z-10 w-36 h-32 sm:w-44 sm:h-36 md:w-52 md:h-44 flex items-center justify-center mx-1 sm:mx-2 drop-shadow-xl overflow-visible lottie-sharp">
         <Lottie 
           src={developerAnimation} 
           loop={true} 
@@ -67,8 +67,8 @@ export default function TechBannerGraphic() {
         />
       </div>
 
-      {/* Right Uneven Pill Cluster */}
-      <div className="flex flex-col gap-2 w-32 justify-center z-10">
+      {/* Right Uneven Pill Cluster (Visible on tablet & desktop) */}
+      <div className="hidden sm:flex flex-col gap-2 w-28 md:w-32 justify-center z-10">
         {rightPills.map((pill, idx) => (
           <div
             key={idx}

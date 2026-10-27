@@ -24,8 +24,8 @@ export default function TechHeroBanner() {
         </p>
       </div>
 
-      {/* Right Hero Illustration with TechBannerGraphic */}
-      <div className="shrink-0 hidden md:flex items-center justify-center">
+      {/* Right Hero Illustration with TechBannerGraphic (Visible on mobile, tablet & desktop) */}
+      <div className="shrink-0 flex items-center justify-center self-center md:self-auto w-full md:w-auto">
         <TechBannerGraphic />
       </div>
     </div>
