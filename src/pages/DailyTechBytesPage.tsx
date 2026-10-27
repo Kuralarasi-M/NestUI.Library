@@ -1,613 +1,409 @@
 import { useEffect, useState } from "react";
 import {
-  Cpu,
-  HelpCircle,
-  Sparkles,
-  Trophy,
-  ArrowRight,
-  ExternalLink,
-  Clock,
-  Tag,
+  Search,
   RefreshCw,
+  SlidersHorizontal,
+  Sparkles,
+  X,
   Menu,
 } from "lucide-react";
-import { useNavigate } from "react-router-dom";
-import {
-  fetchLiveTechArticles,
-  generateTechQuiz,
-  type TechArticle,
-  type TechQuizQuestion,
-} from "../services/techNewsService";
-import { submitQuiz, type QuizSubmitResponse } from "../services/quizService";
+import { fetchTechUpdates, refreshTechNewsCache } from "../services/techNewsService";
+import type { TechUpdate } from "../types/techUpdate";
+import TechHeroBanner from "../components/tech-updates/TechHeroBanner";
+import TechUpdateCard from "../components/tech-updates/TechUpdateCard";
+import TechUpdateSidebar from "../components/tech-updates/TechUpdateSidebar";
+import TechUpdateSkeleton from "../components/tech-updates/TechUpdateSkeleton";
 
 interface DailyTechBytesPageProps {
   onOpenMenu?: () => void;
 }
 
+const CATEGORIES = ["All", "News", "Releases", "Tutorials", "Updates"];
+const TECH_PILLS = [
+  "All Tech",
+  "React",
+  "TypeScript",
+  ".NET",
+  "Node.js",
+  "JavaScript",
+  "SQL",
+  "AI",
+  "Cloud",
+];
+
 export default function DailyTechBytesPage({ onOpenMenu }: DailyTechBytesPageProps) {
-  const navigate = useNavigate();
-  const [viewMode, setViewMode] = useState<"news" | "quiz">("news");
-  const [articles, setArticles] = useState<TechArticle[]>([]);
-  const [selectedArticleIndex, setSelectedArticleIndex] = useState(0);
-  const [questions, setQuestions] = useState<TechQuizQuestion[]>([]);
+  // State
+  const [updates, setUpdates] = useState<TechUpdate[]>([]);
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
+  const [search, setSearch] = useState("");
+  const [selectedCategory, setSelectedCategory] = useState("All");
+  const [selectedTechPill, setSelectedTechPill] = useState("All Tech");
+  const [selectedTechs, setSelectedTechs] = useState<string[]>(["React", "TypeScript", ".NET", "Node.js"]);
+  const [selectedSource, setSelectedSource] = useState("All");
+  const [sortBy, setSortBy] = useState<"latest" | "popular">("latest");
+  const [mobileFilterOpen, setMobileFilterOpen] = useState(false);
+  const [lastUpdated, setLastUpdated] = useState<Date>(new Date());
+  const [page, setPage] = useState(1);
+  const [hasMore, setHasMore] = useState(false);
 
-  // Quiz state
-  const [currentQIndex, setCurrentQIndex] = useState(0);
-  const [selectedAnswers, setSelectedAnswers] = useState<Record<number, number>>({});
-  const [submitted, setSubmitted] = useState(false);
-  const [submitting, setSubmitting] = useState(false);
-  const [result, setResult] = useState<QuizSubmitResponse | null>(null);
-
-  async function loadData() {
+  // Load tech updates from backend API
+  async function loadData(pageNum = 1, append = false) {
+    if (!append) setLoading(true);
     try {
-      setLoading(true);
-      const fetchedArticles = await fetchLiveTechArticles();
-      setArticles(fetchedArticles);
-      setSelectedArticleIndex(0);
-      const generatedQ = generateTechQuiz(fetchedArticles);
-      setQuestions(generatedQ);
-      // Reset quiz status
-      setCurrentQIndex(0);
-      setSelectedAnswers({});
-      setSubmitted(false);
-      setResult(null);
+      const activeTech = selectedTechPill !== "All Tech" ? selectedTechPill : selectedTechs.length === 1 ? selectedTechs[0] : undefined;
+      const res = await fetchTechUpdates({
+        category: selectedCategory,
+        technology: activeTech,
+        search: search.trim() || undefined,
+        source: selectedSource !== "All" ? selectedSource : undefined,
+        sort: sortBy,
+        page: pageNum,
+        pageSize: 10,
+      });
+
+      if (append) {
+        setUpdates((prev) => [...prev, ...res.items]);
+      } else {
+        setUpdates(res.items);
+      }
+      setHasMore(pageNum < res.totalPages);
+      setLastUpdated(new Date());
     } catch (err) {
-      console.error("Failed to load live tech bytes", err);
+      console.error("Failed to load tech updates", err);
     } finally {
       setLoading(false);
+      setRefreshing(false);
     }
   }
 
   useEffect(() => {
-    loadData();
-  }, []);
+    setPage(1);
+    loadData(1, false);
+  }, [selectedCategory, selectedTechPill, selectedTechs, selectedSource, sortBy]);
 
-  const handleSelectOption = (optIdx: number) => {
-    if (submitted) return;
-    setSelectedAnswers({ ...selectedAnswers, [currentQIndex]: optIdx });
+  // Debounced search
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setPage(1);
+      loadData(1, false);
+    }, 300);
+    return () => clearTimeout(timer);
+  }, [search]);
+
+  const handleRefresh = async () => {
+    setRefreshing(true);
+    await refreshTechNewsCache();
+    await loadData(1, false);
   };
 
-  const handleNextQ = () => {
-    if (currentQIndex < questions.length - 1) {
-      setCurrentQIndex(currentQIndex + 1);
-    }
-  };
-
-  const handlePrevQ = () => {
-    if (currentQIndex > 0) {
-      setCurrentQIndex(currentQIndex - 1);
-    }
-  };
-
-  const handleSubmitQuiz = async () => {
-    setSubmitting(true);
-    let correct = 0;
-    questions.forEach((q, idx) => {
-      if (selectedAnswers[idx] === q.correctOptionIndex) correct++;
+  const handleToggleTech = (tech: string) => {
+    setSelectedTechs((prev) => {
+      if (prev.includes(tech)) {
+        return prev.filter((t) => t !== tech);
+      } else {
+        return [...prev, tech];
+      }
     });
-
-    try {
-      const res = await submitQuiz({
-        category: "Technology",
-        difficulty: "medium",
-        totalQuestions: questions.length,
-        correctAnswers: correct,
-        isDailyRead: true, // Counts toward daily streak!
-      });
-      setResult(res);
-      setSubmitted(true);
-    } catch (e) {
-      console.error("Failed to submit daily tech quiz", e);
-    } finally {
-      setSubmitting(false);
-    }
   };
 
-  const activeArticle = articles[selectedArticleIndex] || articles[0];
-  const currentQ = questions[currentQIndex];
+  const handleClearFilters = () => {
+    setSelectedCategory("All");
+    setSelectedTechPill("All Tech");
+    setSelectedTechs([]);
+    setSelectedSource("All");
+    setSearch("");
+    setSortBy("latest");
+  };
+
+  const handleLoadMore = () => {
+    const nextPage = page + 1;
+    setPage(nextPage);
+    loadData(nextPage, true);
+  };
 
   return (
     <main
-      className="min-h-screen p-4 sm:p-8"
+      className="min-h-screen p-4 sm:p-7 space-y-6"
       style={{
         backgroundColor: "var(--page-bg)",
         color: "var(--text-primary)",
       }}
     >
-      <div className="max-w-6xl mx-auto space-y-8">
-        {/* Banner Header */}
-        <div
-          className="pb-6 border-b flex flex-col md:flex-row md:items-center justify-between gap-4"
-          style={{ borderColor: "var(--border)" }}
-        >
-          <div className="flex items-start gap-3">
+      <div className="max-w-7xl mx-auto space-y-6">
+        {/* Mobile Top Navigation with hamburger menu */}
+        <div className="flex items-center justify-between lg:hidden pb-3 border-b" style={{ borderColor: "var(--border)" }}>
+          <div className="flex items-center gap-3">
             {onOpenMenu && (
               <button
                 type="button"
                 onClick={onOpenMenu}
                 aria-label="Open navigation menu"
-                className="lg:hidden p-2.5 rounded-2xl border transition hover:opacity-80 shrink-0 shadow-xs mt-1"
+                className="p-2.5 rounded-2xl border transition hover:opacity-80 shrink-0 shadow-xs"
                 style={{
                   backgroundColor: "var(--surface)",
                   borderColor: "var(--border)",
                   color: "var(--text-primary)",
                 }}
               >
-                <Menu size={22} />
+                <Menu size={20} />
               </button>
             )}
-            <div>
-              <div
-                className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider mb-2"
-                style={{ color: "var(--accent)" }}
-              >
-                <Cpu className="w-4 h-4" /> Live Tech Feed & Daily Streak
-              </div>
-              <h1 className="text-3xl sm:text-4xl font-black flex items-center gap-3">
-                <Sparkles className="w-8 h-8" style={{ color: "var(--accent)" }} /> Daily Tech Bytes
-              </h1>
-              <p className="text-sm mt-1" style={{ color: "var(--text-secondary)" }}>
-                Read live industry updates from Developer & Hacker communities, or take today&apos;s comprehension quiz!
-              </p>
-            </div>
+            <span className="font-extrabold text-base tracking-tight">Latest Tech Updates</span>
           </div>
 
-          <div className="flex flex-wrap items-center gap-3">
-            {/* Header Mode Switcher Tabs */}
-            <div
-              className="flex p-1.5 rounded-2xl border"
-              style={{
-                backgroundColor: "var(--surface)",
-                borderColor: "var(--border)",
-              }}
-            >
-              <button
-                onClick={() => setViewMode("news")}
-                style={
-                  viewMode === "news"
-                    ? { backgroundColor: "var(--btn-primary)", color: "var(--btn-text)" }
-                    : { color: "var(--text-secondary)" }
-                }
-                className="px-4 py-2 rounded-xl text-xs font-bold transition flex items-center gap-2"
-              >
-                <Cpu className="w-3.5 h-3.5" /> Tech Articles
-              </button>
-              <button
-                onClick={() => setViewMode("quiz")}
-                style={
-                  viewMode === "quiz"
-                    ? { backgroundColor: "var(--btn-primary)", color: "var(--btn-text)" }
-                    : { color: "var(--text-secondary)" }
-                }
-                className="px-4 py-2 rounded-xl text-xs font-bold transition flex items-center gap-2"
-              >
-                <HelpCircle className="w-3.5 h-3.5" /> Daily Tech Quiz ({questions.length} Qs)
-              </button>
-            </div>
+          <button
+            type="button"
+            onClick={() => setMobileFilterOpen(true)}
+            className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl border text-xs font-bold shadow-xs"
+            style={{
+              backgroundColor: "var(--surface)",
+              borderColor: "var(--border)",
+              color: "var(--text-primary)",
+            }}
+          >
+            <SlidersHorizontal size={14} /> Filters
+          </button>
+        </div>
 
-            <button
-              onClick={loadData}
-              disabled={loading}
-              className="p-2.5 rounded-xl border flex items-center gap-2 text-xs font-bold transition hover:opacity-80"
+        {/* 1. Hero Banner with Floating Tech Badges */}
+        <TechHeroBanner />
+
+        {/* 2. Primary Category Pills (All, News, Releases, Tutorials, Updates) */}
+        <div className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-none">
+          {CATEGORIES.map((cat) => {
+            const active = selectedCategory.toLowerCase() === cat.toLowerCase();
+            return (
+              <button
+                key={cat}
+                type="button"
+                onClick={() => setSelectedCategory(cat)}
+                style={{
+                  backgroundColor: active ? "var(--btn-primary)" : "var(--surface)",
+                  color: active ? "var(--btn-text)" : "var(--text-secondary)",
+                  borderColor: active ? "var(--btn-primary)" : "var(--border)",
+                }}
+                className="px-5 py-2 rounded-2xl border text-xs font-bold transition shadow-xs hover:opacity-90 shrink-0"
+              >
+                {cat}
+              </button>
+            );
+          })}
+        </div>
+
+        {/* 3. Secondary Technology Pills Bar (All Tech, React, TypeScript, .NET, Node.js, etc.) */}
+        <div className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-none">
+          {TECH_PILLS.map((pill) => {
+            const active = selectedTechPill.toLowerCase() === pill.toLowerCase();
+            return (
+              <button
+                key={pill}
+                type="button"
+                onClick={() => setSelectedTechPill(pill)}
+                style={{
+                  backgroundColor: active ? "var(--surface-secondary)" : "transparent",
+                  color: active ? "var(--text-primary)" : "var(--text-secondary)",
+                  borderColor: active ? "var(--accent)" : "var(--border)",
+                }}
+                className={`px-3.5 py-1.5 rounded-xl border text-xs font-medium transition hover:border-blue-500 shrink-0 ${
+                  active ? "font-bold shadow-xs" : ""
+                }`}
+              >
+                {pill}
+              </button>
+            );
+          })}
+        </div>
+
+        {/* 4. Search Bar & Sort Dropdown Toolbar */}
+        <div className="flex flex-col sm:flex-row items-center justify-between gap-3">
+          {/* Keyword Search Input */}
+          <div className="relative w-full sm:flex-1">
+            <Search
+              size={16}
+              className="absolute left-3.5 top-1/2 -translate-y-1/2 opacity-60"
+              style={{ color: "var(--text-secondary)" }}
+            />
+            <input
+              type="text"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder="Filter by keyword..."
+              className="w-full rounded-2xl border py-2.5 pl-10 pr-4 text-xs outline-none transition focus:border-blue-500 shadow-xs"
               style={{
                 backgroundColor: "var(--surface)",
                 borderColor: "var(--border)",
                 color: "var(--text-primary)",
               }}
-              title="Refresh Live Tech Feed"
+            />
+            {search && (
+              <button
+                type="button"
+                onClick={() => setSearch("")}
+                className="absolute right-3.5 top-1/2 -translate-y-1/2 opacity-60 hover:opacity-100"
+              >
+                <X size={14} />
+              </button>
+            )}
+          </div>
+
+          {/* Sort Switcher (Latest / Popular) & Refresh */}
+          <div className="flex items-center gap-2 w-full sm:w-auto justify-end">
+            <div
+              className="flex items-center gap-2 px-3.5 py-2 rounded-2xl border text-xs font-semibold shadow-xs"
+              style={{
+                backgroundColor: "var(--surface)",
+                borderColor: "var(--border)",
+              }}
             >
-              <RefreshCw className={`w-4 h-4 ${loading ? "animate-spin" : ""}`} /> Refresh
+              <span style={{ color: "var(--text-secondary)" }}>Sort:</span>
+              <select
+                value={sortBy}
+                onChange={(e) => setSortBy(e.target.value as "latest" | "popular")}
+                className="bg-transparent border-none outline-none font-bold cursor-pointer text-xs"
+                style={{ color: "var(--text-primary)" }}
+              >
+                <option value="latest" className="dark:bg-slate-900">⚡ Latest</option>
+                <option value="popular" className="dark:bg-slate-900">🔥 Most Popular</option>
+              </select>
+            </div>
+
+            <button
+              type="button"
+              onClick={handleRefresh}
+              disabled={refreshing}
+              title={`Last updated ${lastUpdated.toLocaleTimeString()}`}
+              className="p-2.5 rounded-2xl border hover:opacity-85 transition shadow-xs flex items-center gap-1.5 text-xs font-bold disabled:opacity-50"
+              style={{
+                backgroundColor: "var(--surface)",
+                borderColor: "var(--border)",
+                color: "var(--text-secondary)",
+              }}
+            >
+              <RefreshCw size={14} className={refreshing ? "animate-spin" : ""} />
             </button>
           </div>
         </div>
 
-        {loading ? (
-          <div className="py-24 text-center space-y-3" style={{ color: "var(--text-secondary)" }}>
-            <Cpu className="w-10 h-10 mx-auto animate-pulse" style={{ color: "var(--accent)" }} />
-            <p className="font-semibold text-sm">Fetching real-time technology updates...</p>
-          </div>
-        ) : articles.length === 0 ? (
-          <div className="py-20 text-center" style={{ color: "var(--text-secondary)" }}>
-            No technology updates available right now. Please refresh.
-          </div>
-        ) : (
-          <div className="space-y-8">
-            {viewMode === "news" ? (
-              <>
-                {/* Top Stories Selector Pills */}
-                <div className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-none">
-                  <span className="text-xs font-bold uppercase tracking-wider shrink-0 mr-2" style={{ color: "var(--text-secondary)" }}>
-                    Today&apos;s Highlights:
-                  </span>
-                  {articles.map((art, idx) => (
-                    <button
-                      key={art.id}
-                      onClick={() => setSelectedArticleIndex(idx)}
-                      className={`px-3 py-1.5 rounded-xl text-xs font-bold transition whitespace-nowrap border shrink-0 ${
-                        selectedArticleIndex === idx
-                          ? "shadow-sm"
-                          : "hover:opacity-80"
-                      }`}
-                      style={
-                        selectedArticleIndex === idx
-                          ? {
-                              backgroundColor: "var(--btn-primary)",
-                              color: "var(--btn-text)",
-                              borderColor: "transparent",
-                            }
-                          : {
-                              backgroundColor: "var(--surface)",
-                              borderColor: "var(--border)",
-                              color: "var(--text-secondary)",
-                            }
-                      }
-                    >
-                      #{idx + 1} {art.tags[0] || art.source}
-                    </button>
-                  ))}
-                </div>
-
-                {/* Featured Article Card */}
-                <div
-                  className="border rounded-3xl p-6 sm:p-9 shadow-xs transition"
-                  style={{
-                    backgroundColor: "var(--surface)",
-                    borderColor: "var(--border)",
-                  }}
-                >
-                  <div className="flex flex-col lg:flex-row gap-8 items-start">
-                    <div className="flex-1 space-y-4">
-                      <div className="flex flex-wrap items-center gap-2">
-                        <span
-                          className="px-2.5 py-1 rounded-lg text-[10px] font-black uppercase tracking-wider border"
-                          style={{
-                            backgroundColor: "var(--surface-secondary)",
-                            borderColor: "var(--border)",
-                            color: "var(--accent)",
-                          }}
-                        >
-                          {activeArticle.source}
-                        </span>
-                        <span
-                          className="inline-flex items-center gap-1 text-xs"
-                          style={{ color: "var(--text-secondary)" }}
-                        >
-                          <Clock className="w-3.5 h-3.5" /> ~{activeArticle.readingTime || 3} min read
-                        </span>
-                        {activeArticle.publishedAt && (
-                          <span className="text-xs" style={{ color: "var(--text-secondary)" }}>
-                            • {activeArticle.publishedAt}
-                          </span>
-                        )}
-                      </div>
-
-                      <h2 className="text-2xl sm:text-3xl font-extrabold leading-tight">
-                        {activeArticle.title}
-                      </h2>
-
-                      <p
-                        className="text-sm sm:text-base leading-relaxed"
-                        style={{ color: "var(--text-secondary)" }}
-                      >
-                        {activeArticle.description}
-                      </p>
-
-                      {/* Tags */}
-                      <div className="flex flex-wrap items-center gap-1.5 pt-2">
-                        {activeArticle.tags.map((t, idx) => (
-                          <span
-                            key={idx}
-                            className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-medium border"
-                            style={{
-                              backgroundColor: "var(--surface-secondary)",
-                              borderColor: "var(--border)",
-                              color: "var(--text-secondary)",
-                            }}
-                          >
-                            <Tag className="w-3 h-3 opacity-60" /> {t}
-                          </span>
-                        ))}
-                      </div>
-
-                      {/* Actions */}
-                      <div className="pt-4 flex flex-wrap items-center gap-3">
-                        <a
-                          href={activeArticle.url}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          style={{
-                            backgroundColor: "var(--btn-primary)",
-                            color: "var(--btn-text)",
-                          }}
-                          className="px-5 py-2.5 rounded-xl font-bold text-xs transition inline-flex items-center gap-2 hover:opacity-90 shadow-sm"
-                        >
-                          Read Full Article <ExternalLink className="w-4 h-4" />
-                        </a>
-
-                        <button
-                          type="button"
-                          onClick={() => setViewMode("quiz")}
-                          style={{
-                            backgroundColor: "var(--surface-secondary)",
-                            borderColor: "var(--border)",
-                            color: "var(--text-primary)",
-                          }}
-                          className="px-5 py-2.5 rounded-xl border font-bold text-xs transition inline-flex items-center gap-2 hover:opacity-90"
-                        >
-                          <HelpCircle className="w-4 h-4" style={{ color: "var(--accent)" }} /> Take Daily Quiz ({questions.length} Qs)
-                        </button>
-                      </div>
-                    </div>
-
-                    {activeArticle.coverImage && (
-                      <div className="w-full lg:w-72 shrink-0">
-                        <img
-                          src={activeArticle.coverImage}
-                          alt={activeArticle.title}
-                          className="w-full h-48 lg:h-52 object-cover rounded-2xl border shadow-sm"
-                          style={{ borderColor: "var(--border)" }}
-                        />
-                      </div>
-                    )}
-                  </div>
-                </div>
-              </>
-            ) : (
-              /* Daily Tech Comprehension Quiz Section (Shown when Quiz tab in header is clicked) */
+        {/* 5. Main Grid: Left Central Feed + Right Sidebar */}
+        <div className="flex flex-col lg:flex-row items-start gap-6">
+          {/* Central Newsfeed Cards */}
+          <div className="flex-1 w-full space-y-4">
+            {loading ? (
+              <TechUpdateSkeleton />
+            ) : updates.length === 0 ? (
               <div
-                id="tech-quiz-section"
-                className="border rounded-3xl p-6 sm:p-9 shadow-xs"
+                className="rounded-3xl border p-12 text-center space-y-4 shadow-xs"
                 style={{
                   backgroundColor: "var(--surface)",
                   borderColor: "var(--border)",
                 }}
               >
-              <div
-                className="flex items-center justify-between pb-5 border-b mb-6"
-                style={{ borderColor: "var(--border)" }}
-              >
-                <div className="flex items-center gap-3">
-                  <span
-                    className="p-3 rounded-2xl border"
-                    style={{
-                      backgroundColor: "var(--surface-secondary)",
-                      borderColor: "var(--border)",
-                      color: "var(--accent)",
-                    }}
-                  >
-                    <HelpCircle className="w-6 h-6" />
-                  </span>
-                  <div>
-                    <h3 className="font-extrabold text-xl">Daily Tech Comprehension Quiz</h3>
-                    <p className="text-xs mt-0.5" style={{ color: "var(--text-secondary)" }}>
-                      Answer today&apos;s 3 questions to earn <span className="font-bold text-amber-500">+100 Points</span> & keep your streak!
-                    </p>
-                  </div>
-                </div>
-
-                <span className="hidden sm:inline-flex text-xs font-bold px-3 py-1.5 rounded-xl border bg-emerald-500/10 border-emerald-500/30 text-emerald-600 dark:text-emerald-400">
-                  Streak Verified 🔥
-                </span>
+                <Sparkles size={40} className="mx-auto text-amber-500 opacity-80" />
+                <h3 className="font-extrabold text-base">No tech updates found</h3>
+                <p className="text-xs max-w-sm mx-auto" style={{ color: "var(--text-secondary)" }}>
+                  Try relaxing your search keywords or clearing active filters to see more stories.
+                </p>
+                <button
+                  type="button"
+                  onClick={handleClearFilters}
+                  className="px-5 py-2 rounded-xl text-xs font-bold transition hover:opacity-90"
+                  style={{
+                    backgroundColor: "var(--btn-primary)",
+                    color: "var(--btn-text)",
+                  }}
+                >
+                  Reset All Filters
+                </button>
               </div>
-
-              {questions.length === 0 ? (
-                <div className="py-8 text-center" style={{ color: "var(--text-secondary)" }}>
-                  Generating quiz from today&apos;s updates...
+            ) : (
+              <>
+                <div className="space-y-4">
+                  {updates.map((item) => (
+                    <TechUpdateCard key={item.id} update={item} />
+                  ))}
                 </div>
-              ) : !submitted ? (
-                <div>
-                  {/* Progress bar */}
-                  <div
-                    className="w-full h-2 rounded-full mb-6 overflow-hidden"
-                    style={{ backgroundColor: "var(--surface-secondary)" }}
-                  >
-                    <div
-                      className="h-2 rounded-full transition-all duration-300"
-                      style={{
-                        width: `${((currentQIndex + 1) / questions.length) * 100}%`,
-                        backgroundColor: "var(--accent)",
-                      }}
-                    />
-                  </div>
 
-                  <div
-                    className="flex justify-between items-center text-xs mb-3 font-semibold"
-                    style={{ color: "var(--text-secondary)" }}
-                  >
-                    <span>Question {currentQIndex + 1} of {questions.length}</span>
-                    <span style={{ color: "var(--accent)" }}>Tech Knowledge</span>
-                  </div>
-
-                  <h4 className="text-base sm:text-lg font-bold min-h-14 mb-6 leading-relaxed">
-                    {currentQ?.question}
-                  </h4>
-
-                  <div className="space-y-3 mb-8">
-                    {currentQ?.options.map((option, optIdx) => {
-                      const isSelected = selectedAnswers[currentQIndex] === optIdx;
-                      return (
-                        <button
-                          key={optIdx}
-                          type="button"
-                          onClick={() => handleSelectOption(optIdx)}
-                          className={`w-full text-left p-4 rounded-2xl border transition flex items-center justify-between ${
-                            isSelected ? "shadow-sm scale-[1.005]" : "hover:opacity-90"
-                          }`}
-                          style={
-                            isSelected
-                              ? {
-                                  backgroundColor: "var(--surface-secondary)",
-                                  borderColor: "var(--accent)",
-                                  color: "var(--text-primary)",
-                                }
-                              : {
-                                  backgroundColor: "var(--input-bg)",
-                                  borderColor: "var(--border)",
-                                  color: "var(--text-primary)",
-                                }
-                          }
-                        >
-                          <span className="text-sm font-semibold pr-3">{option}</span>
-                          <span
-                            className={`w-6 h-6 rounded-full border flex items-center justify-center text-xs shrink-0 ${
-                              isSelected
-                                ? "font-bold text-white shadow-sm"
-                                : "text-transparent"
-                            }`}
-                            style={
-                              isSelected
-                                ? { backgroundColor: "var(--accent)", borderColor: "var(--accent)" }
-                                : { borderColor: "var(--border)" }
-                            }
-                          >
-                            ✓
-                          </span>
-                        </button>
-                      );
-                    })}
-                  </div>
-
-                  <div
-                    className="flex items-center justify-between pt-4 border-t"
-                    style={{ borderColor: "var(--border)" }}
-                  >
+                {/* Load More Button */}
+                {hasMore && (
+                  <div className="pt-4 text-center">
                     <button
                       type="button"
-                      onClick={handlePrevQ}
-                      disabled={currentQIndex === 0}
-                      className="px-4 py-2 rounded-xl text-xs font-bold border transition hover:opacity-80 disabled:opacity-30 disabled:cursor-not-allowed"
+                      onClick={handleLoadMore}
+                      className="px-8 py-3 rounded-2xl text-xs font-bold border transition hover:opacity-90 shadow-xs"
                       style={{
-                        backgroundColor: "var(--surface-secondary)",
-                        borderColor: "var(--border)",
-                        color: "var(--text-secondary)",
-                      }}
-                    >
-                      Previous
-                    </button>
-
-                    {currentQIndex === questions.length - 1 ? (
-                      <button
-                        type="button"
-                        onClick={handleSubmitQuiz}
-                        disabled={submitting || selectedAnswers[currentQIndex] === undefined}
-                        className="px-6 py-2.5 rounded-xl text-xs font-bold text-white shadow-md transition disabled:opacity-40"
-                        style={{ backgroundColor: "#10B981" }}
-                      >
-                        {submitting ? "Submitting..." : "Submit & Keep Streak 🔥"}
-                      </button>
-                    ) : (
-                      <button
-                        type="button"
-                        onClick={handleNextQ}
-                        disabled={selectedAnswers[currentQIndex] === undefined}
-                        style={{
-                          backgroundColor: "var(--btn-primary)",
-                          color: "var(--btn-text)",
-                        }}
-                        className="px-6 py-2.5 rounded-xl text-xs font-bold shadow-md transition hover:opacity-90 disabled:opacity-40 flex items-center gap-2"
-                      >
-                        Next <ArrowRight className="w-4 h-4" />
-                      </button>
-                    )}
-                  </div>
-                </div>
-              ) : (
-                <div className="text-center py-6 animate-in fade-in zoom-in-95 duration-200">
-                  <div
-                    className="inline-flex p-4 rounded-3xl border mb-4 shadow-sm"
-                    style={{
-                      backgroundColor: "var(--surface-secondary)",
-                      borderColor: "var(--border)",
-                      color: "var(--accent)",
-                    }}
-                  >
-                    <Trophy className="w-12 h-12" />
-                  </div>
-                  <h3 className="text-2xl font-black mb-1">Daily Tech Bytes Cleared!</h3>
-                  <p className="text-sm mb-6" style={{ color: "var(--text-secondary)" }}>
-                    You successfully read today&apos;s tech feed, answered the quiz, and advanced your daily streak.
-                  </p>
-
-                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 max-w-lg mx-auto mb-6">
-                    <div
-                      className="border p-4 rounded-2xl"
-                      style={{
-                        backgroundColor: "var(--surface-secondary)",
-                        borderColor: "var(--border)",
-                      }}
-                    >
-                      <span className="text-xs block mb-1" style={{ color: "var(--text-secondary)" }}>
-                        Points Earned
-                      </span>
-                      <span className="text-xl font-bold text-amber-500">
-                        +{result?.pointsEarned || 100}
-                      </span>
-                    </div>
-
-                    <div
-                      className="border p-4 rounded-2xl"
-                      style={{
-                        backgroundColor: "var(--surface-secondary)",
-                        borderColor: "var(--border)",
-                      }}
-                    >
-                      <span className="text-xs block mb-1" style={{ color: "var(--text-secondary)" }}>
-                        Current Streak
-                      </span>
-                      <span className="text-xl font-bold text-orange-500">
-                        {result?.currentStreak || 1} Days 🔥
-                      </span>
-                    </div>
-
-                    <div
-                      className="border p-4 rounded-2xl col-span-2 sm:col-span-1"
-                      style={{
-                        backgroundColor: "var(--surface-secondary)",
-                        borderColor: "var(--border)",
-                      }}
-                    >
-                      <span className="text-xs block mb-1" style={{ color: "var(--text-secondary)" }}>
-                        Total Points
-                      </span>
-                      <span className="text-xl font-bold" style={{ color: "var(--accent)" }}>
-                        {result?.totalPoints || 0}
-                      </span>
-                    </div>
-                  </div>
-
-                  <div className="flex flex-wrap items-center justify-center gap-3">
-                    <button
-                      type="button"
-                      onClick={() => navigate("/leaderboard")}
-                      style={{
-                        backgroundColor: "var(--btn-primary)",
-                        color: "var(--btn-text)",
-                      }}
-                      className="px-6 py-2.5 rounded-xl text-xs font-bold shadow-md transition hover:opacity-90"
-                    >
-                      View Leaderboard & Badges
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => navigate("/games")}
-                      style={{
-                        backgroundColor: "var(--surface-secondary)",
+                        backgroundColor: "var(--surface)",
                         borderColor: "var(--border)",
                         color: "var(--text-primary)",
                       }}
-                      className="px-6 py-2.5 rounded-xl border text-xs font-bold transition hover:opacity-90"
                     >
-                      Back to Games Hub
+                      Load More Updates ↓
                     </button>
                   </div>
-                </div>
-              )}
-            </div>
+                )}
+              </>
             )}
           </div>
-        )}
+
+          {/* Right Sidebar Filters (Desktop) */}
+          <div className="hidden lg:block">
+            <TechUpdateSidebar
+              selectedCategory={selectedCategory}
+              onSelectCategory={setSelectedCategory}
+              selectedTechs={selectedTechs}
+              onToggleTech={handleToggleTech}
+              onClearFilters={handleClearFilters}
+              onSelectTrendingTag={(tag) => setSelectedTechPill(tag)}
+              onSelectSource={setSelectedSource}
+              selectedSource={selectedSource}
+            />
+          </div>
+        </div>
       </div>
+
+      {/* Mobile Drawer Filter Modal */}
+      {mobileFilterOpen && (
+        <div className="fixed inset-0 z-50 flex justify-end bg-black/60 backdrop-blur-xs lg:hidden">
+          <div
+            className="w-full max-w-xs h-full p-6 overflow-y-auto space-y-6 shadow-2xl"
+            style={{
+              backgroundColor: "var(--surface)",
+              color: "var(--text-primary)",
+            }}
+          >
+            <div className="flex items-center justify-between pb-3 border-b" style={{ borderColor: "var(--border)" }}>
+              <span className="font-black text-sm">Filter Tech Updates</span>
+              <button
+                type="button"
+                onClick={() => setMobileFilterOpen(false)}
+                className="p-1 rounded-lg hover:opacity-80"
+              >
+                <X size={18} />
+              </button>
+            </div>
+
+            <TechUpdateSidebar
+              selectedCategory={selectedCategory}
+              onSelectCategory={(cat) => {
+                setSelectedCategory(cat);
+                setMobileFilterOpen(false);
+              }}
+              selectedTechs={selectedTechs}
+              onToggleTech={handleToggleTech}
+              onClearFilters={handleClearFilters}
+              onSelectTrendingTag={(tag) => {
+                setSelectedTechPill(tag);
+                setMobileFilterOpen(false);
+              }}
+              onSelectSource={(src) => {
+                setSelectedSource(src);
+                setMobileFilterOpen(false);
+              }}
+              selectedSource={selectedSource}
+            />
+          </div>
+        </div>
+      )}
     </main>
   );
 }

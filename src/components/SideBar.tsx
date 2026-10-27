@@ -33,7 +33,7 @@ interface NavItem {
 const baseLinks: NavItem[] = [
   { to: "/", label: "Dashboard", icon: LayoutDashboard },
   { to: "/discover", label: "Library", icon: BookOpen },
-  { to: "/daily-tech", label: "Tech Bytes", icon: Cpu, badge: "New" },
+  { to: "/daily-tech", label: "Latest Tech Updates", icon: Cpu, badge: "New" },
   { to: "/games", label: "Games & Puzzles", icon: Gamepad2 },
   { to: "/leaderboard", label: "Leaderboard & Badges", icon: Trophy },
   { to: "/my-library", label: "My Library", icon: Bookmark },
