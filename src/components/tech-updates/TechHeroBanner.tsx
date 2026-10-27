@@ -4,7 +4,7 @@ import TechBannerGraphic from "./TechBannerGraphic";
 export default function TechHeroBanner() {
   return (
     <div
-      className="relative overflow-hidden rounded-3xl border p-6 sm:p-8 flex flex-col md:flex-row items-start md:items-center justify-between gap-6 shadow-sm"
+      className="relative overflow-hidden rounded-2xl border p-4 sm:px-6 sm:py-4 flex flex-col md:flex-row items-start md:items-center justify-between gap-4 shadow-sm"
       style={{
         backgroundColor: "var(--surface)",
         borderColor: "var(--border)",
