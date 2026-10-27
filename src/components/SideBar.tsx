@@ -87,16 +87,21 @@ export default function Sidebar({ open, onClose }: SidebarProps) {
             <div className="w-11 h-11 rounded-full overflow-hidden flex items-center justify-center border-2 border-cyan-400/60 shadow-md bg-white dark:bg-slate-900 shrink-0">
               <img
                 src="/novamind-logo.png"
-                alt="NovaMind"
+                alt="Nest Mind Learning"
                 className="w-full h-full object-cover scale-105"
                 onError={(e) => {
                   (e.currentTarget as HTMLImageElement).src = "/mind web.png";
                 }}
               />
             </div>
-            <span className="text-xl font-extrabold tracking-tight bg-gradient-to-r from-blue-600 via-indigo-600 to-cyan-500 bg-clip-text text-transparent dark:from-sky-400 dark:via-indigo-400 dark:to-cyan-300">
-              NovaMind
-            </span>
+            <div className="flex flex-col leading-tight">
+              <span className="text-lg font-black tracking-tight bg-gradient-to-r from-blue-600 via-indigo-600 to-cyan-500 bg-clip-text text-transparent dark:from-sky-400 dark:via-indigo-400 dark:to-cyan-300">
+                Nest Mind
+              </span>
+              <span className="text-[10px] font-bold uppercase tracking-widest text-slate-400 dark:text-slate-500">
+                Learning
+              </span>
+            </div>
           </div>
 
           <button

@@ -69,7 +69,7 @@ export default function AuthPage() {
           <div className="mx-auto mb-3 flex h-20 w-20 items-center justify-center rounded-full bg-white shadow-lg border-2 border-cyan-400/60 dark:border-cyan-400/40 dark:bg-slate-900 overflow-hidden">
             <img
               src="/novamind-logo.png"
-              alt="NovaMind"
+              alt="Nest Mind Learning"
               className="w-full h-full object-cover scale-105"
               onError={(e) => {
                 (e.currentTarget as HTMLImageElement).src = "/mind web.png";
@@ -77,7 +77,7 @@ export default function AuthPage() {
             />
           </div>
           <h1 className="text-2xl font-bold tracking-tight text-slate-900 dark:text-white">
-            {isRegister ? "Join NovaMind" : "Welcome Back to NovaMind"}
+            {isRegister ? "Join Nest Mind Learning" : "Welcome Back to Nest Mind"}
           </h1>
           <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
             {isRegister
