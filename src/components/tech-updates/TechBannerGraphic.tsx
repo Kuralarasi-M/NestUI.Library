@@ -53,13 +53,13 @@ export default function TechBannerGraphic() {
         ))}
       </div>
 
-      {/* Center Lottie (Enlarged while maintaining compact banner proportions) */}
-      <div className="relative z-10 w-36 h-36 sm:w-40 sm:h-40 flex items-center justify-center mx-2 drop-shadow-lg">
+      {/* Center Lottie - Laptop Prominently Enlarged */}
+      <div className="relative z-10 w-44 sm:w-52 h-40 sm:h-44 flex items-center justify-center mx-2 drop-shadow-xl overflow-visible">
         <Lottie 
           src={developerAnimation} 
           loop={true} 
           autoplay={true}
-          className="w-full h-full object-contain pointer-events-none scale-105" 
+          className="w-full h-full object-contain pointer-events-none scale-125 transition-transform duration-300" 
         />
       </div>
 
