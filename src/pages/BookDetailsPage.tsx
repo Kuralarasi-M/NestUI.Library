@@ -15,6 +15,7 @@ import {
 import { useNavigate, useParams } from "react-router-dom";
 import { getBookDetails, recordDownload } from "../services/bookService";
 import type { BookDetails } from "../services/bookService";
+import BookReviewsSection from "../components/BookReviewsSection";
 
 export default function BookDetailsPage() {
   const { gutendexId } = useParams();
@@ -371,6 +372,9 @@ export default function BookDetailsPage() {
             </div>
           </section>
         </div>
+
+        {/* Reviews and Community Discussion */}
+        <BookReviewsSection bookId={Number(gutendexId)} />
       </div>
     </main>
   );

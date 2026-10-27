@@ -60,6 +60,49 @@ import DiscoverPage from "./pages/DiscoverPage";
 import LanguageBooksPage from "./pages/LanguageBooksPage";
 import NotificationsPage from "./pages/NotificationsPage";
 import SendNotificationPage from "./pages/SendNotificationPage";
+import LeaderboardPage from "./pages/LeaderboardPage";
+import RandomChallengePage from "./pages/RandomChallengePage";
+import DailyTamilSentencesPage from "./pages/DailyTamilSentencesPage";
+import DailyTechBytesPage from "./pages/DailyTechBytesPage";
+
+function LeaderboardRoute() {
+  const { onOpenMenu } = useOutletContext<{ onOpenMenu: () => void }>();
+  return <LeaderboardPage onOpenMenu={onOpenMenu} />;
+}
+
+function ChallengeRoute() {
+  const { onOpenMenu } = useOutletContext<{ onOpenMenu: () => void }>();
+  return <RandomChallengePage onOpenMenu={onOpenMenu} />;
+}
+
+function DailyTamilRoute() {
+  const { onOpenMenu } = useOutletContext<{ onOpenMenu: () => void }>();
+  return <DailyTamilSentencesPage onOpenMenu={onOpenMenu} />;
+}
+
+function DailyTechBytesRoute() {
+  const { onOpenMenu } = useOutletContext<{ onOpenMenu: () => void }>();
+  return <DailyTechBytesPage onOpenMenu={onOpenMenu} />;
+}
+
+import WordGamesPage from "./pages/WordGamesPage";
+import GamesHubPage from "./pages/GamesHubPage";
+import MyLibraryPage from "./pages/MyLibraryPage";
+
+function WordGamesRoute() {
+  const { onOpenMenu } = useOutletContext<{ onOpenMenu: () => void }>();
+  return <WordGamesPage onOpenMenu={onOpenMenu} />;
+}
+
+function GamesHubRoute() {
+  const { onOpenMenu } = useOutletContext<{ onOpenMenu: () => void }>();
+  return <GamesHubPage onOpenMenu={onOpenMenu} />;
+}
+
+function MyLibraryRoute() {
+  const { onOpenMenu } = useOutletContext<{ onOpenMenu: () => void }>();
+  return <MyLibraryPage onOpenMenu={onOpenMenu} />;
+}
 
 export default function App() {
   return (
@@ -71,13 +114,21 @@ export default function App() {
         {/* Pages with the regular sidebar */}
         <Route element={<LibraryLayout />}>
           <Route path="/" element={<DashboardRoute />} />
-          <Route path="/languages" element={<LanguageBooksPage />} />
           <Route path="/discover" element={<DiscoverPage />} />
+          <Route path="/games" element={<GamesHubRoute />} />
+          <Route path="/word-games" element={<WordGamesRoute />} />
+          <Route path="/daily-tech" element={<DailyTechBytesRoute />} />
+          <Route path="/daily-read-quiz" element={<DailyTechBytesRoute />} />
+          <Route path="/daily-tamil" element={<DailyTamilRoute />} />
+          <Route path="/challenge" element={<ChallengeRoute />} />
+          <Route path="/leaderboard" element={<LeaderboardRoute />} />
+          <Route path="/my-library" element={<MyLibraryRoute />} />
           <Route path="/favorites" element={<FavoritesPage />} />
           <Route path="/history" element={<HistoryPage />} />
           <Route path="/search-history" element={<SearchHistoryPage />} />
           <Route path="/notifications" element={<NotificationsPage />} />
           <Route path="/admin/broadcast" element={<SendNotificationPage />} />
+          <Route path="/languages" element={<LanguageBooksPage />} />
           <Route path="/books/:gutendexId" element={<BookDetailsPage />} />
           <Route path="*" element={<NotFoundRoute />} />
         </Route>

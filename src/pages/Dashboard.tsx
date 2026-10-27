@@ -1,18 +1,36 @@
 
 import { useEffect, useState, useRef } from "react";
-import { Search, Menu, Moon, Sun, Languages, BookOpen, Bell } from "lucide-react";
+import {
+  Search,
+  Menu,
+  Moon,
+  Sun,
+  BookOpen,
+  Bell,
+  Flame,
+  Star,
+  Award,
+  Sparkles,
+  Zap,
+  Cpu,
+  ArrowRight,
+} from "lucide-react";
 import { useTheme } from "../hooks/useTheme";
 import {
   getAllBooks,
-  getFavoriteIds,
-  toggleFavorite,
   getReadingHistory,
   recordSearchQuery,
   type ReadingHistoryItem,
 } from "../services/bookService";
 import type { Book } from "../services/bookService";
 import { getUnreadNotificationCount } from "../services/notificationService";
-import BookCard from "../components/BookCard";
+import { fetchLiveTechArticles, type TechArticle } from "../services/techNewsService";
+import {
+  getUserGamificationStats,
+  updateUserGenres,
+  type UserGamificationStats,
+} from "../services/quizService";
+import GenrePickerModal from "../components/GenrePickerModal";
 import { useNavigate, useSearchParams } from "react-router-dom";
 
 interface DashboardProps {
@@ -24,13 +42,16 @@ export default function Dashboard({ onOpenMenu }: DashboardProps) {
   const urlSearch = searchParams.get("search") || "";
 
   const [books, setBooks] = useState<Book[]>([]);
-  const [favoriteIds, setFavoriteIds] = useState<Set<number>>(new Set());
   const [recentReads, setRecentReads] = useState<ReadingHistoryItem[]>([]);
-  const [selectedLanguage, setSelectedLanguage] = useState<string>("all");
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
+  const [, setLoading] = useState(true);
+  const [, setError] = useState("");
   const [search, setSearch] = useState(urlSearch);
   const [unreadCount, setUnreadCount] = useState<number>(0);
+
+  // Gamification & Genre State
+  const [gamification, setGamification] = useState<UserGamificationStats | null>(null);
+  const [genreModalOpen, setGenreModalOpen] = useState(false);
+  const [topTechArticle, setTopTechArticle] = useState<TechArticle | null>(null);
 
   const { theme, toggleTheme } = useTheme();
   const navigate = useNavigate();
@@ -61,17 +82,23 @@ export default function Dashboard({ onOpenMenu }: DashboardProps) {
         setLoading(true);
         setError("");
 
-        const [booksData, favIds, historyData, notifCount] = await Promise.all([
+        const [booksData, historyData, notifCount, gamifData, techData] = await Promise.all([
           getAllBooks(),
-          getFavoriteIds().catch(() => []),
           getReadingHistory().catch(() => []),
           getUnreadNotificationCount().catch(() => 0),
+          getUserGamificationStats().catch(() => null),
+          fetchLiveTechArticles().catch(() => []),
         ]);
 
         setBooks(booksData);
-        setFavoriteIds(new Set(favIds));
         setRecentReads(historyData.slice(0, 3));
         setUnreadCount(notifCount);
+        if (gamifData) {
+          setGamification(gamifData);
+        }
+        if (techData && techData.length > 0) {
+          setTopTechArticle(techData[0]);
+        }
       } catch (err: any) {
         if (err?.message?.includes("Session expired") || err?.message?.includes("401")) {
           window.location.href = "/login";
@@ -89,56 +116,6 @@ export default function Dashboard({ onOpenMenu }: DashboardProps) {
 
     loadData();
   }, []);
-
-  async function handleToggleFavorite(bookId: number) {
-    // Optimistic UI update
-    setFavoriteIds((prev) => {
-      const next = new Set(prev);
-      if (next.has(bookId)) {
-        next.delete(bookId);
-      } else {
-        next.add(bookId);
-      }
-      return next;
-    });
-
-    try {
-      const res = await toggleFavorite(bookId);
-      setFavoriteIds((prev) => {
-        const next = new Set(prev);
-        if (res.isFavorite) {
-          next.add(bookId);
-        } else {
-          next.delete(bookId);
-        }
-        return next;
-      });
-    } catch {
-      // Revert if error
-      setFavoriteIds((prev) => {
-        const next = new Set(prev);
-        if (next.has(bookId)) next.delete(bookId);
-        else next.add(bookId);
-        return next;
-      });
-    }
-  }
-
-  const filteredBooks = books.filter((book) => {
-    const matchesSearch =
-      !search ||
-      `${book.title} ${book.author} ${book.genre} ${book.subjects} ${book.summary}`
-        .toLowerCase()
-        .includes(search.toLowerCase());
-    const matchesLang =
-      selectedLanguage === "all" ||
-      book.language?.toLowerCase() === selectedLanguage.toLowerCase() ||
-      (selectedLanguage === "ta" &&
-        (book.language?.toLowerCase().includes("ta") ||
-          book.genre?.toLowerCase().includes("tamil") ||
-          book.title?.toLowerCase().includes("tamil")));
-    return matchesSearch && matchesLang;
-  });
 
   function handleSearchSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -240,6 +217,45 @@ export default function Dashboard({ onOpenMenu }: DashboardProps) {
       </header>
 
       <div className="mx-auto max-w-7xl space-y-8 p-4 sm:p-7">
+        {/* Streak & Points Ribbon */}
+        {gamification && (
+          <div className="flex flex-wrap items-center justify-between gap-4 p-4 rounded-2xl bg-slate-900/80 border border-slate-800 text-sm">
+            <div className="flex items-center gap-6">
+              <div className="flex items-center gap-2">
+                <Flame className="w-5 h-5 text-orange-500 animate-bounce" />
+                <span className="font-bold text-white">{gamification.currentStreak} Day Streak</span>
+                <span className="text-xs text-slate-400">
+                  (Best: {gamification.longestStreak} days)
+                </span>
+              </div>
+              <div className="flex items-center gap-2">
+                <Star className="w-4 h-4 text-amber-400 fill-amber-400" />
+                <span className="font-bold text-amber-300">{gamification.totalPoints} Pts</span>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-3">
+              <button
+                type="button"
+                onClick={() => setGenreModalOpen(true)}
+                className="text-xs font-semibold px-3 py-1.5 rounded-xl border border-indigo-500/30 bg-indigo-500/10 text-indigo-300 hover:bg-indigo-500/20 transition flex items-center gap-1.5"
+              >
+                <Sparkles className="w-3.5 h-3.5" />
+                {gamification.selectedGenres.length > 0
+                  ? `Genres (${gamification.selectedGenres.length})`
+                  : "Pick Genres"}
+              </button>
+              <button
+                type="button"
+                onClick={() => navigate("/leaderboard")}
+                className="text-xs font-semibold px-3 py-1.5 rounded-xl border border-amber-500/30 bg-amber-500/10 text-amber-300 hover:bg-amber-500/20 transition flex items-center gap-1.5"
+              >
+                <Award className="w-3.5 h-3.5" /> Leaderboard
+              </button>
+            </div>
+          </div>
+        )}
+
         <section
           className="rounded-3xl p-6 sm:p-9 shadow-sm border transition"
           style={{
@@ -248,18 +264,39 @@ export default function Dashboard({ onOpenMenu }: DashboardProps) {
             borderColor: "var(--border)",
           }}
         >
-          <p className="text-xs uppercase tracking-widest font-semibold opacity-85">
-            YOUR PERSONAL LIBRARY
-          </p>
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
+            <div>
+              <p className="text-xs uppercase tracking-widest font-semibold opacity-85">
+                MY LIBRARY
+              </p>
 
-          <h1 className="mt-3 text-3xl font-bold sm:text-4xl">
-            Every book opens a new world.
-          </h1>
+              <h1 className="mt-3 text-3xl font-bold sm:text-4xl">
+                Every day is a chance to learn something new.
+              </h1>
 
-          <p className="mt-3 max-w-xl text-sm leading-6 opacity-90">
-            Discover stories, explore genres, and find your next
-            favorite book.
-          </p>
+              <p className="mt-3 max-w-xl text-sm leading-6 opacity-90">
+                Pick up where you left off, find your next great read, and take on a quick knowledge challenge.
+              </p>
+            </div>
+
+            {/* Daily 5 Words Knowledge CTA Card */}
+            <div className="bg-black/25 backdrop-blur-sm border border-white/10 p-5 rounded-2xl max-w-xs shrink-0 text-left">
+              <div className="flex items-center gap-2 text-amber-300 text-xs font-bold uppercase tracking-wider mb-2">
+                <Sparkles className="w-4 h-4" /> Daily Habit
+              </div>
+              <h4 className="font-bold text-sm text-white mb-1">Test Your Knowledge</h4>
+              <p className="text-xs text-white/80 mb-4">
+                Learn 5 daily vocabulary words with Tamil meanings and keep your reading streak alive!
+              </p>
+              <button
+                type="button"
+                onClick={() => navigate("/daily-tamil")}
+                className="w-full py-2 px-3 rounded-xl bg-white text-slate-900 font-bold text-xs hover:bg-slate-100 transition shadow-md flex items-center justify-center gap-1.5"
+              >
+                Start Daily 5 Words ⚡
+              </button>
+            </div>
+          </div>
 
           <div
             className="mt-4 inline-flex items-center gap-2 rounded-xl px-3.5 py-1.5 text-xs font-medium border"
@@ -333,152 +370,154 @@ export default function Dashboard({ onOpenMenu }: DashboardProps) {
           </section>
         )}
 
-        <section className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-          <div
-            className="rounded-2xl border p-5 transition"
+
+        {/* Today's Tech Pulse Card */}
+        {topTechArticle && (
+          <section
+            onClick={() => navigate("/daily-tech")}
+            className="p-5 sm:p-6 rounded-3xl border transition-all hover:scale-[1.008] hover:shadow-lg cursor-pointer flex flex-col md:flex-row md:items-center justify-between gap-5 relative overflow-hidden"
             style={{
               backgroundColor: "var(--surface)",
               borderColor: "var(--border)",
             }}
           >
-            <p className="text-xs uppercase font-medium tracking-wider" style={{ color: "var(--text-secondary)" }}>
-              Books available
-            </p>
-            <p className="mt-2 text-3xl font-bold">
-              {books.length}
-            </p>
-          </div>
+            <div className="flex items-start gap-4 flex-1">
+              <div
+                className="w-12 h-12 rounded-2xl flex items-center justify-center text-white shrink-0 shadow-sm"
+                style={{ backgroundColor: "#0284C7" }}
+              >
+                <Cpu className="w-6 h-6" />
+              </div>
+              <div className="space-y-1 flex-1">
+                <div className="flex items-center gap-2">
+                  <span
+                    className="px-2 py-0.5 rounded-md text-[10px] font-black uppercase tracking-wider border"
+                    style={{
+                      backgroundColor: "var(--surface-secondary)",
+                      borderColor: "var(--border)",
+                      color: "var(--accent)",
+                    }}
+                  >
+                    Today&apos;s Tech Pulse
+                  </span>
+                  <span className="text-[11px] font-medium" style={{ color: "var(--text-secondary)" }}>
+                    • Live from {topTechArticle.source}
+                  </span>
+                </div>
+                <h3 className="font-bold text-base sm:text-lg line-clamp-1">
+                  {topTechArticle.title}
+                </h3>
+                <p className="text-xs line-clamp-2 leading-relaxed" style={{ color: "var(--text-secondary)" }}>
+                  {topTechArticle.description}
+                </p>
+              </div>
+            </div>
 
+            <div className="flex items-center gap-3 shrink-0 self-end md:self-center">
+              <div
+                className="px-4 py-2 rounded-xl text-xs font-bold flex items-center gap-1.5 shadow-sm transition hover:opacity-90"
+                style={{
+                  backgroundColor: "var(--btn-primary)",
+                  color: "var(--btn-text)",
+                }}
+              >
+                Read & Take Quiz (+100 Pts) <ArrowRight className="w-3.5 h-3.5" />
+              </div>
+            </div>
+          </section>
+        )}
+
+        {/* Quick Hub Navigation Cards */}
+        <section className="grid grid-cols-1 md:grid-cols-3 gap-5">
           <div
-            className="rounded-2xl border p-5 transition"
+            onClick={() => navigate("/discover")}
+            className="p-6 rounded-3xl border transition-all hover:scale-[1.01] hover:shadow-lg cursor-pointer flex flex-col justify-between"
             style={{
               backgroundColor: "var(--surface)",
               borderColor: "var(--border)",
             }}
           >
-            <p className="text-xs uppercase font-medium tracking-wider" style={{ color: "var(--text-secondary)" }}>
-              Genres
-            </p>
-            <p className="mt-2 text-3xl font-bold">
-              {
-                new Set(
-                  books.flatMap((book) =>
-                    book.genre
-                      .split(",")
-                      .map((genre) => genre.trim())
-                  )
-                ).size
-              }
-            </p>
-          </div>
-
-          <div
-            className="rounded-2xl border p-5 transition"
-            style={{
-              backgroundColor: "var(--surface)",
-              borderColor: "var(--border)",
-            }}
-          >
-            <p className="text-xs uppercase font-medium tracking-wider" style={{ color: "var(--text-secondary)" }}>
-              Total downloads
-            </p>
-            <p className="mt-2 text-3xl font-bold">
-              {books
-                .reduce(
-                  (total, book) => total + book.downloadCount,
-                  0
-                )
-                .toLocaleString()}
-            </p>
-          </div>
-        </section>
-
-        <section>
-          <div className="mb-5 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
             <div>
-              <h2 className="text-xl font-bold">Discover books</h2>
-              <p className="mt-1 text-xs" style={{ color: "var(--text-secondary)" }}>
-                Browse your library and select a book to see its details.
+              <div
+                className="w-12 h-12 rounded-2xl flex items-center justify-center text-white mb-4 shadow-sm"
+                style={{ backgroundColor: "var(--btn-primary)" }}
+              >
+                <BookOpen className="w-6 h-6" />
+              </div>
+              <h3 className="font-bold text-lg">Public Domain Library</h3>
+              <p className="text-xs mt-1 leading-relaxed" style={{ color: "var(--text-secondary)" }}>
+                Browse our full collection of classic literature, search by title or author, and read non-copyright books.
               </p>
             </div>
-
-            {/* Language filter pills */}
-            <div className="flex items-center gap-2 overflow-x-auto pb-1">
-              <span className="flex items-center gap-1 text-xs font-semibold shrink-0" style={{ color: "var(--text-secondary)" }}>
-                <Languages size={15} /> Language:
-              </span>
-              {[
-                { code: "all", label: "All" },
-                { code: "en", label: "English" },
-                { code: "ta", label: "தமிழ் (Tamil)" },
-                { code: "fr", label: "Français" },
-                { code: "de", label: "Deutsch" },
-              ].map((lang) => (
-                <button
-                  key={lang.code}
-                  onClick={() => setSelectedLanguage(lang.code)}
-                  style={
-                    selectedLanguage === lang.code
-                      ? {
-                          backgroundColor: "var(--btn-primary)",
-                          color: "var(--btn-text)",
-                        }
-                      : {
-                          backgroundColor: "var(--surface-secondary)",
-                          color: "var(--text-primary)",
-                          borderColor: "var(--border)",
-                        }
-                  }
-                  className="rounded-xl px-3 py-1.5 text-xs font-semibold whitespace-nowrap border transition hover:opacity-90"
-                >
-                  {lang.label}
-                </button>
-              ))}
+            <div className="pt-4 mt-4 border-t flex items-center justify-between text-xs font-bold" style={{ borderColor: "var(--border)", color: "var(--link)" }}>
+              <span>Browse Catalog ({books.length} Books)</span>
+              <span>&rarr;</span>
             </div>
           </div>
 
-          {loading && (
-            <p role="status" className="py-10 text-center">
-              Loading books...
-            </p>
-          )}
-
-          {!loading && error && (
-            <div
-              role="alert"
-              className="rounded-xl bg-red-50 p-4 text-red-700 dark:bg-red-950/30 dark:text-red-300"
-            >
-              {error}
-
-              <button
-                onClick={() => window.location.reload()}
-                className="ml-3 underline"
+          <div
+            onClick={() => navigate("/games")}
+            className="p-6 rounded-3xl border transition-all hover:scale-[1.01] hover:shadow-lg cursor-pointer flex flex-col justify-between"
+            style={{
+              backgroundColor: "var(--surface)",
+              borderColor: "var(--border)",
+            }}
+          >
+            <div>
+              <div
+                className="w-12 h-12 rounded-2xl flex items-center justify-center text-white mb-4 shadow-sm bg-purple-600"
               >
-                Retry
-              </button>
+                <Zap className="w-6 h-6" />
+              </div>
+              <h3 className="font-bold text-lg">Games & Puzzles</h3>
+              <p className="text-xs mt-1 leading-relaxed" style={{ color: "var(--text-secondary)" }}>
+                Sentence Builder, Guess the Word, Multi-Stage Word Search, and Tamil vocabulary matching.
+              </p>
             </div>
-          )}
-
-          {!loading && !error && filteredBooks.length === 0 && (
-            <p className="py-10 text-center text-slate-500">
-              No books match your search.
-            </p>
-          )}
-
-          {!loading && !error && filteredBooks.length > 0 && (
-            <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-              {filteredBooks.map((book) => (
-                <BookCard
-                  key={book.id}
-                  book={book}
-                  isFavorite={favoriteIds.has(book.id)}
-                  onToggleFavorite={handleToggleFavorite}
-                />
-              ))}
+            <div className="pt-4 mt-4 border-t flex items-center justify-between text-xs font-bold text-purple-600 dark:text-purple-400" style={{ borderColor: "var(--border)" }}>
+              <span>Play All 4 Activities</span>
+              <span>&rarr;</span>
             </div>
-          )}
+          </div>
+
+          <div
+            onClick={() => navigate("/my-library")}
+            className="p-6 rounded-3xl border transition-all hover:scale-[1.01] hover:shadow-lg cursor-pointer flex flex-col justify-between"
+            style={{
+              backgroundColor: "var(--surface)",
+              borderColor: "var(--border)",
+            }}
+          >
+            <div>
+              <div
+                className="w-12 h-12 rounded-2xl flex items-center justify-center text-white mb-4 shadow-sm bg-rose-500"
+              >
+                <Star className="w-6 h-6 fill-current" />
+              </div>
+              <h3 className="font-bold text-lg">My Library</h3>
+              <p className="text-xs mt-1 leading-relaxed" style={{ color: "var(--text-secondary)" }}>
+                Access all your saved favorite books and continue reading from your recent bookmark history.
+              </p>
+            </div>
+            <div className="pt-4 mt-4 border-t flex items-center justify-between text-xs font-bold text-rose-500" style={{ borderColor: "var(--border)" }}>
+              <span>View Favorites & History</span>
+              <span>&rarr;</span>
+            </div>
+          </div>
         </section>
       </div>
+
+      <GenrePickerModal
+        isOpen={genreModalOpen}
+        onClose={() => setGenreModalOpen(false)}
+        selectedGenres={gamification?.selectedGenres || []}
+        onSave={async (genres) => {
+          await updateUserGenres(genres);
+          if (gamification) {
+            setGamification({ ...gamification, selectedGenres: genres });
+          }
+        }}
+      />
     </main>
   );
 }

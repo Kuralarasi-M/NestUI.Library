@@ -45,7 +45,28 @@ export function saveLoggedInUser(user: LoginResponse) {
 }
 
 export function logoutUser() {
+  // Clear logged in credentials
   localStorage.removeItem(AUTH_USER_KEY);
+
+  // Clear daily game progress, quiz completions, and reading state
+  try {
+    const keysToRemove: string[] = [];
+    for (let i = 0; i < localStorage.length; i++) {
+      const key = localStorage.key(i);
+      if (
+        key &&
+        (key.startsWith("tamil_daily_") ||
+          key.startsWith("word_search_") ||
+          key.startsWith("reading_") ||
+          key.startsWith("quiz_"))
+      ) {
+        keysToRemove.push(key);
+      }
+    }
+    keysToRemove.forEach((k) => localStorage.removeItem(k));
+  } catch (e) {
+    console.warn("Failed to clear game storage on logout", e);
+  }
 }
 
 async function sendAuthRequest<T>(

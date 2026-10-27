@@ -276,6 +276,64 @@ export default function DiscoverPage() {
           </button>
         </div>
 
+        {/* Library Badges / Metrics */}
+        <section className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+          <div
+            className="rounded-2xl border p-5 transition"
+            style={{
+              backgroundColor: "var(--surface)",
+              borderColor: "var(--border)",
+            }}
+          >
+            <p className="text-xs uppercase font-medium tracking-wider" style={{ color: "var(--text-secondary)" }}>
+              Books available
+            </p>
+            <p className="mt-2 text-3xl font-bold">
+              {books.length}
+            </p>
+          </div>
+
+          <div
+            className="rounded-2xl border p-5 transition"
+            style={{
+              backgroundColor: "var(--surface)",
+              borderColor: "var(--border)",
+            }}
+          >
+            <p className="text-xs uppercase font-medium tracking-wider" style={{ color: "var(--text-secondary)" }}>
+              Genres
+            </p>
+            <p className="mt-2 text-3xl font-bold">
+              {
+                new Set(
+                  books.flatMap((book) =>
+                    book.genre
+                      ? book.genre.split(",").map((g) => g.trim()).filter(Boolean)
+                      : []
+                  )
+                ).size
+              }
+            </p>
+          </div>
+
+          <div
+            className="rounded-2xl border p-5 transition"
+            style={{
+              backgroundColor: "var(--surface)",
+              borderColor: "var(--border)",
+            }}
+          >
+            <p className="text-xs uppercase font-medium tracking-wider" style={{ color: "var(--text-secondary)" }}>
+              Total downloads
+            </p>
+            <p className="mt-2 text-3xl font-bold">
+              {books
+                .reduce((total, book) => total + (book.downloadCount || 0), 0)
+                .toLocaleString()}
+            </p>
+          </div>
+        </section>
+
         {/* Filter Toolbar: Language, Genre, Sort */}
         <div
           className="flex flex-wrap items-center gap-3 p-4 rounded-2xl border transition"

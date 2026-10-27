@@ -2,16 +2,15 @@
 import {
   BookOpen,
   LayoutDashboard,
-  Compass,
-  Heart,
-  History,
-  Search,
-  Languages,
   X,
   LogIn,
   LogOut,
-  Bell,
   Send,
+  Trophy,
+  Gamepad2,
+  Bookmark,
+  Bell,
+  Cpu,
 } from "lucide-react";
 import { NavLink, useNavigate } from "react-router-dom";
 import { useEffect, useState } from "react";
@@ -23,13 +22,21 @@ interface SidebarProps {
   onClose: () => void;
 }
 
-const baseLinks = [
+interface NavItem {
+  to?: string;
+  label: string;
+  icon: any;
+  badge?: "Existing" | "New" | "Later";
+  disabled?: boolean;
+}
+
+const baseLinks: NavItem[] = [
   { to: "/", label: "Dashboard", icon: LayoutDashboard },
-  { to: "/languages", label: "Languages / தமிழ்", icon: Languages },
-  { to: "/discover", label: "Discover", icon: Compass },
-  { to: "/favorites", label: "Favorites", icon: Heart },
-  { to: "/history", label: "Reading History", icon: History },
-  { to: "/search-history", label: "Search History", icon: Search },
+  { to: "/discover", label: "Library", icon: BookOpen },
+  { to: "/daily-tech", label: "Tech Bytes", icon: Cpu, badge: "New" },
+  { to: "/games", label: "Games & Puzzles", icon: Gamepad2 },
+  { to: "/leaderboard", label: "Leaderboard & Badges", icon: Trophy },
+  { to: "/my-library", label: "My Library", icon: Bookmark },
   { to: "/notifications", label: "Notifications", icon: Bell },
 ];
 
@@ -103,33 +110,69 @@ export default function Sidebar({ open, onClose }: SidebarProps) {
           Your Library
         </p>
 
-        <nav className="space-y-1.5">
-          {links.map(({ to, label, icon: Icon }) => (
-            <NavLink
-              key={to}
-              to={to}
-              end={to === "/"}
-              onClick={onClose}
-              style={({ isActive }) =>
-                isActive
-                  ? {
-                      backgroundColor: "var(--btn-primary)",
-                      color: "var(--btn-text)",
-                    }
-                  : {}
-              }
-              className={({ isActive }) =>
-                `flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition ${
+        <nav className="space-y-1">
+          {links.map((item, idx) => {
+            const { to, label, icon: Icon, badge, disabled } = item;
+
+            if (disabled || !to) {
+              return (
+                <div
+                  key={label + idx}
+                  className="flex items-center justify-between rounded-xl px-3 py-2 text-sm text-slate-500 opacity-60 cursor-not-allowed select-none"
+                >
+                  <div className="flex items-center gap-3">
+                    <Icon size={18} />
+                    <span>{label}</span>
+                  </div>
+                  {badge && (
+                    <span className="text-[11px] font-medium text-slate-500">
+                      {badge}
+                    </span>
+                  )}
+                </div>
+              );
+            }
+
+            return (
+              <NavLink
+                key={to + label + idx}
+                to={to}
+                end={to === "/"}
+                onClick={onClose}
+                style={({ isActive }) =>
                   isActive
-                    ? "shadow-sm font-semibold"
-                    : "hover:opacity-90"
-                }`
-              }
-            >
-              <Icon size={19} />
-              {label}
-            </NavLink>
-          ))}
+                    ? {
+                        backgroundColor: "var(--btn-primary)",
+                        color: "var(--btn-text)",
+                      }
+                    : {}
+                }
+                className={({ isActive }) =>
+                  `flex items-center justify-between rounded-xl px-3 py-2 text-sm font-medium transition ${
+                    isActive
+                      ? "shadow-sm font-semibold"
+                      : "hover:opacity-90"
+                  }`
+                }
+              >
+                <div className="flex items-center gap-3">
+                  <Icon size={18} />
+                  <span>{label}</span>
+                </div>
+                {badge && (
+                  <span
+                    className={`text-[11px] font-medium ${
+                      badge === "New"
+                        ? "text-sky-400 font-semibold"
+                        : "text-slate-400"
+                    }`}
+                  >
+                    {badge}
+                  </span>
+                )}
+              </NavLink>
+            );
+          })}
         </nav>
 
         <div className="mt-auto space-y-3">
