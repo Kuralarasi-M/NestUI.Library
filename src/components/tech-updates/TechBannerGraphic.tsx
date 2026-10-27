@@ -53,13 +53,17 @@ export default function TechBannerGraphic() {
         ))}
       </div>
 
-      {/* Center Lottie - Laptop Prominently Enlarged */}
-      <div className="relative z-10 w-44 sm:w-52 h-40 sm:h-44 flex items-center justify-center mx-2 drop-shadow-xl overflow-visible">
+      {/* Center Lottie - Crystal Clear SVG Rendering (No Blur) */}
+      <div className="relative z-10 w-44 sm:w-52 h-40 sm:h-44 flex items-center justify-center mx-2 drop-shadow-xl overflow-visible lottie-sharp">
         <Lottie 
           src={developerAnimation} 
           loop={true} 
           autoplay={true}
-          className="w-full h-full object-contain pointer-events-none scale-125 transition-transform duration-300" 
+          rendererSettings={{
+            preserveAspectRatio: 'xMidYMid meet',
+            progressiveLoad: true,
+          }}
+          className="w-full h-full object-contain pointer-events-none" 
         />
       </div>
 

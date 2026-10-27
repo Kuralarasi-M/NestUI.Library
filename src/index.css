@@ -160,3 +160,25 @@ textarea {
   will-change: transform;
 }
 
+/* Force crystal-clear, non-blurry SVG and image rendering in Lottie animations */
+.lottie-sharp {
+  image-rendering: -webkit-optimize-contrast;
+  image-rendering: crisp-edges;
+  shape-rendering: geometricPrecision;
+  text-rendering: geometricPrecision;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+.lottie-sharp svg,
+.lottie-sharp svg image,
+.lottie-sharp svg path,
+.lottie-sharp svg rect {
+  image-rendering: -webkit-optimize-contrast;
+  image-rendering: crisp-edges;
+  shape-rendering: geometricPrecision;
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+  transform: translateZ(0);
+}
+
