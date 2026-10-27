@@ -11,13 +11,18 @@ import {
   FileText,
   BookMarked,
   Globe,
+  Menu,
 } from "lucide-react";
 import { useNavigate, useParams } from "react-router-dom";
 import { getBookDetails, recordDownload } from "../services/bookService";
 import type { BookDetails } from "../services/bookService";
 import BookReviewsSection from "../components/BookReviewsSection";
 
-export default function BookDetailsPage() {
+interface BookDetailsPageProps {
+  onOpenMenu?: () => void;
+}
+
+export default function BookDetailsPage({ onOpenMenu }: BookDetailsPageProps) {
   const { gutendexId } = useParams();
   const navigate = useNavigate();
 
@@ -126,13 +131,27 @@ export default function BookDetailsPage() {
   return (
     <main className="min-h-screen bg-slate-50 p-4 text-slate-900 dark:bg-gray-950 dark:text-white sm:p-8">
       <div className="mx-auto max-w-5xl">
-        <button
-          onClick={() => navigate("/")}
-          className="mb-8 flex items-center gap-2 text-sm text-indigo-600 dark:text-indigo-400"
-        >
-          <ArrowLeft size={18} />
-          Back to library
-        </button>
+        <div className="mb-8 flex items-center justify-between gap-3">
+          <button
+            onClick={() => navigate("/")}
+            className="flex items-center gap-2 text-sm text-indigo-600 dark:text-indigo-400"
+          >
+            <ArrowLeft size={18} />
+            Back to library
+          </button>
+
+          {onOpenMenu && (
+            <button
+              type="button"
+              onClick={onOpenMenu}
+              aria-label="Open navigation menu"
+              className="lg:hidden p-2 rounded-xl border border-slate-200 dark:border-white/10 bg-white dark:bg-slate-900 transition hover:opacity-80 shadow-xs flex items-center gap-1.5 text-xs font-bold"
+            >
+              <Menu size={18} />
+              <span>Menu</span>
+            </button>
+          )}
+        </div>
 
         <div className="grid gap-8 md:grid-cols-[240px_1fr]">
           <div className="flex justify-center">

@@ -1,10 +1,14 @@
 import React, { useState } from "react";
-import { Send, ArrowLeft, Radio, Users, ShieldCheck, CheckCircle2, AlertCircle, LoaderCircle } from "lucide-react";
+import { Send, ArrowLeft, Radio, Users, ShieldCheck, CheckCircle2, AlertCircle, LoaderCircle, Menu } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { sendBroadcastNotification } from "../services/notificationService";
 import { getLoggedInUser } from "../services/authServices";
 
-export default function SendNotificationPage() {
+interface SendNotificationPageProps {
+  onOpenMenu?: () => void;
+}
+
+export default function SendNotificationPage({ onOpenMenu }: SendNotificationPageProps) {
   const [title, setTitle] = useState("");
   const [message, setMessage] = useState("");
   const [targetAudience, setTargetAudience] = useState<"all" | "admins">("all");
@@ -84,14 +88,33 @@ export default function SendNotificationPage() {
       }}
     >
       <div className="mx-auto max-w-3xl space-y-6">
-        {/* Top Back Navigation */}
-        <button
-          onClick={() => navigate(-1)}
-          className="inline-flex items-center gap-1.5 text-xs font-semibold hover:opacity-80 transition"
-          style={{ color: "var(--link)" }}
-        >
-          <ArrowLeft size={16} /> Back
-        </button>
+        {/* Top Back & Mobile Menu Navigation */}
+        <div className="flex items-center justify-between gap-3">
+          <button
+            onClick={() => navigate(-1)}
+            className="inline-flex items-center gap-1.5 text-xs font-semibold hover:opacity-80 transition"
+            style={{ color: "var(--link)" }}
+          >
+            <ArrowLeft size={16} /> Back
+          </button>
+
+          {onOpenMenu && (
+            <button
+              type="button"
+              onClick={onOpenMenu}
+              aria-label="Open navigation menu"
+              className="lg:hidden p-2 rounded-xl border transition hover:opacity-80 shadow-xs flex items-center gap-1.5 text-xs font-bold"
+              style={{
+                backgroundColor: "var(--surface)",
+                borderColor: "var(--border)",
+                color: "var(--text-primary)",
+              }}
+            >
+              <Menu size={18} />
+              <span>Menu</span>
+            </button>
+          )}
+        </div>
 
         {/* Page Header */}
         <div className="flex items-center gap-3.5">

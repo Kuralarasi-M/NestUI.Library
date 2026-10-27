@@ -9,6 +9,7 @@ import {
   Trophy,
   ArrowRight,
   ArrowLeft,
+  Menu,
 } from "lucide-react";
 import {
   getSentenceBuilderGames,
@@ -25,7 +26,7 @@ interface WordGamesPageProps {
   onOpenMenu?: () => void;
 }
 
-export default function WordGamesPage({}: WordGamesPageProps) {
+export default function WordGamesPage({ onOpenMenu }: WordGamesPageProps) {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const initialTab = (searchParams.get("tab") as "sentence" | "guess" | "search") || "sentence";
@@ -261,18 +262,37 @@ export default function WordGamesPage({}: WordGamesPageProps) {
       }}
     >
       <div className="max-w-6xl mx-auto">
-        {/* Back to Games Menu Button */}
-        <button
-          onClick={() => navigate("/games")}
-          className="mb-4 inline-flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-bold border transition hover:opacity-85 shadow-xs"
-          style={{
-            backgroundColor: "var(--surface)",
-            borderColor: "var(--border)",
-            color: "var(--text-secondary)",
-          }}
-        >
-          <ArrowLeft className="w-4 h-4" /> Back to Games & Puzzles
-        </button>
+        {/* Back to Games Menu & Mobile Navigation Bar */}
+        <div className="mb-4 flex items-center justify-between gap-3">
+          <button
+            onClick={() => navigate("/games")}
+            className="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-bold border transition hover:opacity-85 shadow-xs"
+            style={{
+              backgroundColor: "var(--surface)",
+              borderColor: "var(--border)",
+              color: "var(--text-secondary)",
+            }}
+          >
+            <ArrowLeft className="w-4 h-4" /> Back to Games & Puzzles
+          </button>
+
+          {onOpenMenu && (
+            <button
+              type="button"
+              onClick={onOpenMenu}
+              aria-label="Open navigation menu"
+              className="lg:hidden p-2 rounded-xl border transition hover:opacity-80 shadow-xs flex items-center gap-1.5 text-xs font-bold"
+              style={{
+                backgroundColor: "var(--surface)",
+                borderColor: "var(--border)",
+                color: "var(--text-primary)",
+              }}
+            >
+              <Menu size={18} />
+              <span>Menu</span>
+            </button>
+          )}
+        </div>
 
         {/* Header */}
         <div

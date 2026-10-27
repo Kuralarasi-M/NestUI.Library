@@ -1,12 +1,16 @@
 import { useEffect, useState, useMemo } from "react";
-import { Search, Compass, X, Moon, Sun, Filter, BookOpen } from "lucide-react";
+import { Search, Compass, X, Moon, Sun, Filter, BookOpen, Menu } from "lucide-react";
 import { useSearchParams, useNavigate } from "react-router-dom";
 import { getAllBooks, searchBooks, getFavoriteIds, toggleFavorite, recordSearchQuery } from "../services/bookService";
 import type { Book } from "../services/bookService";
 import BookCard from "../components/BookCard";
 import { useTheme } from "../hooks/useTheme";
 
-export default function DiscoverPage() {
+interface DiscoverPageProps {
+  onOpenMenu?: () => void;
+}
+
+export default function DiscoverPage({ onOpenMenu }: DiscoverPageProps) {
   const [searchParams, setSearchParams] = useSearchParams();
   const initialQuery = searchParams.get("q") || searchParams.get("search") || "";
 
@@ -197,6 +201,22 @@ export default function DiscoverPage() {
           borderColor: "var(--border)",
         }}
       >
+        {onOpenMenu && (
+          <button
+            type="button"
+            onClick={onOpenMenu}
+            aria-label="Open navigation menu"
+            className="lg:hidden p-2 rounded-xl border transition hover:opacity-80 shrink-0 shadow-xs"
+            style={{
+              backgroundColor: "var(--surface)",
+              borderColor: "var(--border)",
+              color: "var(--text-primary)",
+            }}
+          >
+            <Menu size={20} />
+          </button>
+        )}
+
         <form onSubmit={handleSearchSubmit} className="relative flex-1 max-w-2xl">
           <Search
             size={18}

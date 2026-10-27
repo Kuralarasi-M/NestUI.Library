@@ -1,11 +1,15 @@
 import { useEffect, useState } from "react";
-import { ArrowLeft, Heart, LoaderCircle } from "lucide-react";
+import { ArrowLeft, Heart, LoaderCircle, Menu } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { getFavorites, toggleFavorite } from "../services/bookService";
 import type { Book } from "../services/bookService";
 import BookCard from "../components/BookCard";
 
-export default function FavoritesPage() {
+interface FavoritesPageProps {
+  onOpenMenu?: () => void;
+}
+
+export default function FavoritesPage({ onOpenMenu }: FavoritesPageProps) {
   const [favorites, setFavorites] = useState<Book[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -44,21 +48,33 @@ export default function FavoritesPage() {
   return (
     <main className="min-h-screen bg-slate-50 p-4 text-slate-900 dark:bg-gray-950 dark:text-white sm:p-8">
       <div className="mx-auto max-w-7xl">
-        <div className="mb-6 flex items-center justify-between">
-          <div>
-            <button
-              onClick={() => navigate("/")}
-              className="mb-3 flex items-center gap-1.5 text-xs font-semibold text-indigo-600 dark:text-indigo-400"
-            >
-              <ArrowLeft size={16} /> Back to Dashboard
-            </button>
-            <h1 className="text-2xl font-bold flex items-center gap-2">
-              <Heart size={24} className="text-rose-500 fill-rose-500" />
-              My Favorite Books
-            </h1>
-            <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
-              Books you have saved to read and revisit anytime.
-            </p>
+        <div className="mb-6 flex items-center justify-between gap-3">
+          <div className="flex items-start gap-3">
+            {onOpenMenu && (
+              <button
+                type="button"
+                onClick={onOpenMenu}
+                aria-label="Open navigation menu"
+                className="lg:hidden p-2 rounded-xl border border-slate-200 dark:border-white/10 bg-white dark:bg-slate-900 transition hover:opacity-80 shrink-0 shadow-xs mt-1"
+              >
+                <Menu size={20} />
+              </button>
+            )}
+            <div>
+              <button
+                onClick={() => navigate("/")}
+                className="mb-2 flex items-center gap-1.5 text-xs font-semibold text-indigo-600 dark:text-indigo-400"
+              >
+                <ArrowLeft size={16} /> Back to Dashboard
+              </button>
+              <h1 className="text-2xl font-bold flex items-center gap-2">
+                <Heart size={24} className="text-rose-500 fill-rose-500" />
+                My Favorite Books
+              </h1>
+              <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
+                Books you have saved to read and revisit anytime.
+              </p>
+            </div>
           </div>
         </div>
 

@@ -4,6 +4,7 @@ import {
   Clock,
   Star,
   ArrowRight,
+  Menu,
 } from "lucide-react";
 import { Link } from "react-router-dom";
 
@@ -11,7 +12,7 @@ interface GamesHubPageProps {
   onOpenMenu?: () => void;
 }
 
-export default function GamesHubPage({}: GamesHubPageProps) {
+export default function GamesHubPage({ onOpenMenu }: GamesHubPageProps) {
   const [searchQuery, setSearchQuery] = useState("");
 
   const games = [
@@ -190,9 +191,25 @@ export default function GamesHubPage({}: GamesHubPageProps) {
       }}
     >
       <div className="max-w-6xl mx-auto space-y-7">
-        {/* Top Header matching reference image: Gaming Controller + Title + Subtitle + Search Input */}
+        {/* Top Header matching reference image: Mobile Menu + Gaming Controller + Title + Subtitle + Search Input */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-          <div className="flex items-start gap-4">
+          <div className="flex items-start gap-3 sm:gap-4">
+            {onOpenMenu && (
+              <button
+                type="button"
+                onClick={onOpenMenu}
+                aria-label="Open navigation menu"
+                className="lg:hidden p-2.5 rounded-2xl border transition hover:opacity-80 shrink-0 shadow-xs mt-0.5"
+                style={{
+                  backgroundColor: "var(--surface)",
+                  borderColor: "var(--border)",
+                  color: "var(--text-primary)",
+                }}
+              >
+                <Menu size={22} />
+              </button>
+            )}
+
             {/* Vibrant Blue Controller Icon Badge */}
             <div className="w-12 h-12 rounded-2xl bg-blue-600 flex items-center justify-center text-white shrink-0 shadow-md shadow-blue-500/20">
               <svg

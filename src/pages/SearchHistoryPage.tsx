@@ -1,9 +1,13 @@
 import { useEffect, useState } from "react";
-import { ArrowLeft, Search, Trash2, Clock, LoaderCircle } from "lucide-react";
+import { ArrowLeft, Search, Trash2, Clock, LoaderCircle, Menu } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { getSearchHistory, clearSearchHistory, type SearchHistoryItem } from "../services/bookService";
 
-export default function SearchHistoryPage() {
+interface SearchHistoryPageProps {
+  onOpenMenu?: () => void;
+}
+
+export default function SearchHistoryPage({ onOpenMenu }: SearchHistoryPageProps) {
   const [history, setHistory] = useState<SearchHistoryItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -43,20 +47,32 @@ export default function SearchHistoryPage() {
     <main className="min-h-screen bg-slate-50 p-4 text-slate-900 dark:bg-gray-950 dark:text-white sm:p-8">
       <div className="mx-auto max-w-4xl">
         <div className="mb-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-          <div>
-            <button
-              onClick={() => navigate("/")}
-              className="mb-3 flex items-center gap-1.5 text-xs font-semibold text-indigo-600 dark:text-indigo-400"
-            >
-              <ArrowLeft size={16} /> Back to Dashboard
-            </button>
-            <h1 className="text-2xl font-bold flex items-center gap-2">
-              <Search size={24} className="text-indigo-600" />
-              Search History
-            </h1>
-            <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
-              Keywords and topics you have recently looked up.
-            </p>
+          <div className="flex items-start gap-3">
+            {onOpenMenu && (
+              <button
+                type="button"
+                onClick={onOpenMenu}
+                aria-label="Open navigation menu"
+                className="lg:hidden p-2 rounded-xl border border-slate-200 dark:border-white/10 bg-white dark:bg-slate-900 transition hover:opacity-80 shrink-0 shadow-xs mt-1"
+              >
+                <Menu size={20} />
+              </button>
+            )}
+            <div>
+              <button
+                onClick={() => navigate("/")}
+                className="mb-2 flex items-center gap-1.5 text-xs font-semibold text-indigo-600 dark:text-indigo-400"
+              >
+                <ArrowLeft size={16} /> Back to Dashboard
+              </button>
+              <h1 className="text-2xl font-bold flex items-center gap-2">
+                <Search size={24} className="text-indigo-600" />
+                Search History
+              </h1>
+              <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
+                Keywords and topics you have recently looked up.
+              </p>
+            </div>
           </div>
 
           {history.length > 0 && (

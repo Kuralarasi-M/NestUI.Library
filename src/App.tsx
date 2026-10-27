@@ -104,6 +104,46 @@ function MyLibraryRoute() {
   return <MyLibraryPage onOpenMenu={onOpenMenu} />;
 }
 
+function DiscoverRoute() {
+  const { onOpenMenu } = useOutletContext<{ onOpenMenu: () => void }>();
+  return <DiscoverPage onOpenMenu={onOpenMenu} />;
+}
+
+function FavoritesRoute() {
+  const { onOpenMenu } = useOutletContext<{ onOpenMenu: () => void }>();
+  return <FavoritesPage onOpenMenu={onOpenMenu} />;
+}
+
+function HistoryRoute() {
+  const { onOpenMenu } = useOutletContext<{ onOpenMenu: () => void }>();
+  return <HistoryPage onOpenMenu={onOpenMenu} />;
+}
+
+function SearchHistoryRoute() {
+  const { onOpenMenu } = useOutletContext<{ onOpenMenu: () => void }>();
+  return <SearchHistoryPage onOpenMenu={onOpenMenu} />;
+}
+
+function NotificationsRoute() {
+  const { onOpenMenu } = useOutletContext<{ onOpenMenu: () => void }>();
+  return <NotificationsPage onOpenMenu={onOpenMenu} />;
+}
+
+function SendNotificationRoute() {
+  const { onOpenMenu } = useOutletContext<{ onOpenMenu: () => void }>();
+  return <SendNotificationPage onOpenMenu={onOpenMenu} />;
+}
+
+function LanguageBooksRoute() {
+  const { onOpenMenu } = useOutletContext<{ onOpenMenu: () => void }>();
+  return <LanguageBooksPage onOpenMenu={onOpenMenu} />;
+}
+
+function BookDetailsRoute() {
+  const { onOpenMenu } = useOutletContext<{ onOpenMenu: () => void }>();
+  return <BookDetailsPage onOpenMenu={onOpenMenu} />;
+}
+
 export default function App() {
   return (
     <BrowserRouter>
@@ -114,7 +154,7 @@ export default function App() {
         {/* Pages with the regular sidebar */}
         <Route element={<LibraryLayout />}>
           <Route path="/" element={<DashboardRoute />} />
-          <Route path="/discover" element={<DiscoverPage />} />
+          <Route path="/discover" element={<DiscoverRoute />} />
           <Route path="/games" element={<GamesHubRoute />} />
           <Route path="/word-games" element={<WordGamesRoute />} />
           <Route path="/daily-tech" element={<DailyTechBytesRoute />} />
@@ -123,13 +163,13 @@ export default function App() {
           <Route path="/challenge" element={<ChallengeRoute />} />
           <Route path="/leaderboard" element={<LeaderboardRoute />} />
           <Route path="/my-library" element={<MyLibraryRoute />} />
-          <Route path="/favorites" element={<FavoritesPage />} />
-          <Route path="/history" element={<HistoryPage />} />
-          <Route path="/search-history" element={<SearchHistoryPage />} />
-          <Route path="/notifications" element={<NotificationsPage />} />
-          <Route path="/admin/broadcast" element={<SendNotificationPage />} />
-          <Route path="/languages" element={<LanguageBooksPage />} />
-          <Route path="/books/:gutendexId" element={<BookDetailsPage />} />
+          <Route path="/favorites" element={<FavoritesRoute />} />
+          <Route path="/history" element={<HistoryRoute />} />
+          <Route path="/search-history" element={<SearchHistoryRoute />} />
+          <Route path="/notifications" element={<NotificationsRoute />} />
+          <Route path="/admin/broadcast" element={<SendNotificationRoute />} />
+          <Route path="/languages" element={<LanguageBooksRoute />} />
+          <Route path="/books/:gutendexId" element={<BookDetailsRoute />} />
           <Route path="*" element={<NotFoundRoute />} />
         </Route>
 

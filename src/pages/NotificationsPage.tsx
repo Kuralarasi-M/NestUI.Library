@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Bell, CheckCheck, RefreshCw, Sparkles, UserPlus, Radio, ArrowLeft } from "lucide-react";
+import { Bell, CheckCheck, RefreshCw, Sparkles, UserPlus, Radio, ArrowLeft, Menu } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import {
   getMyNotifications,
@@ -9,7 +9,11 @@ import {
 } from "../services/notificationService";
 import { getLoggedInUser } from "../services/authServices";
 
-export default function NotificationsPage() {
+interface NotificationsPageProps {
+  onOpenMenu?: () => void;
+}
+
+export default function NotificationsPage({ onOpenMenu }: NotificationsPageProps) {
   const [notifications, setNotifications] = useState<AppNotification[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -85,26 +89,42 @@ export default function NotificationsPage() {
       <div className="mx-auto max-w-4xl space-y-6">
         {/* Header */}
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-          <div>
-            <button
-              onClick={() => navigate(-1)}
-              className="mb-2 inline-flex items-center gap-1.5 text-xs font-semibold hover:opacity-80 transition"
-              style={{ color: "var(--link)" }}
-            >
-              <ArrowLeft size={16} /> Back
-            </button>
-            <h1 className="text-2xl sm:text-3xl font-extrabold flex items-center gap-3">
-              <div
-                className="flex h-11 w-11 items-center justify-center rounded-2xl"
+          <div className="flex items-start gap-3">
+            {onOpenMenu && (
+              <button
+                type="button"
+                onClick={onOpenMenu}
+                aria-label="Open navigation menu"
+                className="lg:hidden p-2.5 rounded-2xl border transition hover:opacity-80 shrink-0 shadow-xs mt-1"
                 style={{
                   backgroundColor: "var(--surface)",
-                  color: "var(--accent)",
-                  boxShadow: "0 2px 8px rgba(0,0,0,0.06)",
+                  borderColor: "var(--border)",
+                  color: "var(--text-primary)",
                 }}
               >
-                <Bell size={22} />
-              </div>
-              Notifications
+                <Menu size={20} />
+              </button>
+            )}
+            <div>
+              <button
+                onClick={() => navigate(-1)}
+                className="mb-2 inline-flex items-center gap-1.5 text-xs font-semibold hover:opacity-80 transition"
+                style={{ color: "var(--link)" }}
+              >
+                <ArrowLeft size={16} /> Back
+              </button>
+              <h1 className="text-2xl sm:text-3xl font-extrabold flex items-center gap-3">
+                <div
+                  className="flex h-11 w-11 items-center justify-center rounded-2xl"
+                  style={{
+                    backgroundColor: "var(--surface)",
+                    color: "var(--accent)",
+                    boxShadow: "0 2px 8px rgba(0,0,0,0.06)",
+                  }}
+                >
+                  <Bell size={22} />
+                </div>
+                Notifications
               {unreadCount > 0 && (
                 <span
                   className="rounded-full px-2.5 py-0.5 text-xs font-bold"
@@ -123,8 +143,9 @@ export default function NotificationsPage() {
                 : "Stay updated with library announcements, broadcasts, and system updates."}
             </p>
           </div>
+        </div>
 
-          <div className="flex items-center gap-2.5 self-start sm:self-auto">
+        <div className="flex items-center gap-2.5 self-start sm:self-auto">
             {isAdmin && (
               <button
                 onClick={() => navigate("/admin/broadcast")}

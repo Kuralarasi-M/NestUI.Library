@@ -1,5 +1,5 @@
 import { useEffect, useState, useMemo } from "react";
-import { Search, BookOpen, Languages, Sparkles, Filter, X, Sun, Moon } from "lucide-react";
+import { Search, BookOpen, Languages, Sparkles, Filter, X, Sun, Moon, Menu } from "lucide-react";
 import { useSearchParams, useNavigate } from "react-router-dom";
 import {
   getBooksByLanguage,
@@ -10,6 +10,10 @@ import {
 } from "../services/bookService";
 import BookCard from "../components/BookCard";
 import { useTheme } from "../hooks/useTheme";
+
+interface LanguageBooksPageProps {
+  onOpenMenu?: () => void;
+}
 
 interface LanguageOption {
   code: string;
@@ -64,7 +68,7 @@ const LANGUAGE_OPTIONS: LanguageOption[] = [
   },
 ];
 
-export default function LanguageBooksPage() {
+export default function LanguageBooksPage({ onOpenMenu }: LanguageBooksPageProps) {
   const [searchParams, setSearchParams] = useSearchParams();
   const initialLang = searchParams.get("lang") || "ta"; // Default to Tamil
   const initialSearch = searchParams.get("q") || "";
@@ -198,6 +202,16 @@ export default function LanguageBooksPage() {
       {/* Top Header */}
       <header className="sticky top-0 z-30 flex items-center justify-between gap-3 border-b border-slate-200 bg-white/90 p-4 backdrop-blur dark:border-white/10 dark:bg-gray-950/90 sm:px-8">
         <div className="flex items-center gap-3">
+          {onOpenMenu && (
+            <button
+              type="button"
+              onClick={onOpenMenu}
+              aria-label="Open navigation menu"
+              className="lg:hidden p-2 rounded-xl border border-slate-200 dark:border-white/10 bg-white dark:bg-slate-900 transition hover:opacity-80 shrink-0 shadow-xs"
+            >
+              <Menu size={20} />
+            </button>
+          )}
           <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-amber-500/10 text-amber-600 dark:bg-amber-400/10 dark:text-amber-400">
             <Languages size={22} />
           </div>

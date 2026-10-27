@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Heart, Clock, LoaderCircle, Bookmark, ArrowRight, ArrowLeft } from "lucide-react";
+import { Heart, Clock, LoaderCircle, Bookmark, ArrowRight, ArrowLeft, Menu } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { getFavorites, toggleFavorite, getReadingHistory, type ReadingHistoryItem, type Book } from "../services/bookService";
 import BookCard from "../components/BookCard";
@@ -8,7 +8,7 @@ interface MyLibraryPageProps {
   onOpenMenu?: () => void;
 }
 
-export default function MyLibraryPage({}: MyLibraryPageProps) {
+export default function MyLibraryPage({ onOpenMenu }: MyLibraryPageProps) {
   const [activeTab, setActiveTab] = useState<"favorites" | "history">("favorites");
   const [favorites, setFavorites] = useState<Book[]>([]);
   const [history, setHistory] = useState<ReadingHistoryItem[]>([]);
@@ -70,20 +70,37 @@ export default function MyLibraryPage({}: MyLibraryPageProps) {
           className="pb-6 border-b flex flex-col sm:flex-row sm:items-center justify-between gap-4"
           style={{ borderColor: "var(--border)" }}
         >
-          <div>
-            <button
-              onClick={() => navigate("/")}
-              className="mb-2 flex items-center gap-1.5 text-xs font-semibold hover:underline"
-              style={{ color: "var(--link)" }}
-            >
-              <ArrowLeft size={16} /> Back to Dashboard
-            </button>
-            <h1 className="text-2xl sm:text-3xl font-black flex items-center gap-3">
-              <Bookmark className="w-8 h-8" style={{ color: "var(--accent)" }} /> My Library
-            </h1>
-            <p className="text-sm mt-1" style={{ color: "var(--text-secondary)" }}>
-              All your saved favorites and reading history organized in one convenient place.
-            </p>
+          <div className="flex items-start justify-between sm:justify-start gap-3 w-full sm:w-auto">
+            {onOpenMenu && (
+              <button
+                type="button"
+                onClick={onOpenMenu}
+                aria-label="Open navigation menu"
+                className="lg:hidden p-2 rounded-xl border transition hover:opacity-80 shrink-0 shadow-xs mt-1"
+                style={{
+                  backgroundColor: "var(--surface)",
+                  borderColor: "var(--border)",
+                  color: "var(--text-primary)",
+                }}
+              >
+                <Menu size={20} />
+              </button>
+            )}
+            <div>
+              <button
+                onClick={() => navigate("/")}
+                className="mb-2 flex items-center gap-1.5 text-xs font-semibold hover:underline"
+                style={{ color: "var(--link)" }}
+              >
+                <ArrowLeft size={16} /> Back to Dashboard
+              </button>
+              <h1 className="text-2xl sm:text-3xl font-black flex items-center gap-3">
+                <Bookmark className="w-8 h-8" style={{ color: "var(--accent)" }} /> My Library
+              </h1>
+              <p className="text-sm mt-1" style={{ color: "var(--text-secondary)" }}>
+                All your saved favorites and reading history organized in one convenient place.
+              </p>
+            </div>
           </div>
 
           {/* Tab Switcher */}

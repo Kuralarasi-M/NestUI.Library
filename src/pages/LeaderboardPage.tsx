@@ -5,6 +5,7 @@ import {
   Award,
   Star,
   Users,
+  Menu,
 } from "lucide-react";
 import {
   getLeaderboard,
@@ -18,7 +19,7 @@ interface LeaderboardPageProps {
   onOpenMenu?: () => void;
 }
 
-export default function LeaderboardPage({}: LeaderboardPageProps) {
+export default function LeaderboardPage({ onOpenMenu }: LeaderboardPageProps) {
   const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([]);
   const [stats, setStats] = useState<UserGamificationStats | null>(null);
   const [loading, setLoading] = useState(true);
@@ -61,16 +62,33 @@ export default function LeaderboardPage({}: LeaderboardPageProps) {
       <div className="max-w-6xl mx-auto">
         {/* Top Header */}
         <div
-          className="flex items-center justify-between mb-8 pb-4 border-b"
+          className="flex items-center justify-between mb-8 pb-4 border-b gap-4"
           style={{ borderColor: "var(--border)" }}
         >
-          <div>
-            <h1 className="text-2xl sm:text-3xl font-black flex items-center gap-3">
-              <Trophy className="w-8 h-8 text-amber-500" /> Leaderboard & Achievements
-            </h1>
-            <p className="text-sm mt-1" style={{ color: "var(--text-secondary)" }}>
-              Compete with fellow readers, maintain your daily streaks, and earn badges.
-            </p>
+          <div className="flex items-start gap-3">
+            {onOpenMenu && (
+              <button
+                type="button"
+                onClick={onOpenMenu}
+                aria-label="Open navigation menu"
+                className="lg:hidden p-2.5 rounded-2xl border transition hover:opacity-80 shrink-0 shadow-xs mt-0.5"
+                style={{
+                  backgroundColor: "var(--surface)",
+                  borderColor: "var(--border)",
+                  color: "var(--text-primary)",
+                }}
+              >
+                <Menu size={22} />
+              </button>
+            )}
+            <div>
+              <h1 className="text-2xl sm:text-3xl font-black flex items-center gap-3">
+                <Trophy className="w-8 h-8 text-amber-500" /> Leaderboard & Achievements
+              </h1>
+              <p className="text-sm mt-1" style={{ color: "var(--text-secondary)" }}>
+                Compete with fellow readers, maintain your daily streaks, and earn badges.
+              </p>
+            </div>
           </div>
         </div>
 

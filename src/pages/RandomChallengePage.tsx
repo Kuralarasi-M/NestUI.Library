@@ -7,6 +7,7 @@ import {
   Trophy,
   Sparkles,
   Globe2,
+  Menu,
 } from "lucide-react";
 import { AVAILABLE_GENRES } from "../components/GenrePickerModal";
 import { type QuizQuestion } from "../services/quizService";
@@ -17,7 +18,7 @@ interface RandomChallengePageProps {
   onOpenMenu?: () => void;
 }
 
-export default function RandomChallengePage({}: RandomChallengePageProps) {
+export default function RandomChallengePage({ onOpenMenu }: RandomChallengePageProps) {
   const navigate = useNavigate();
   const [currentLevel, setCurrentLevel] = useState<number>(() => {
     const saved = localStorage.getItem("book_quiz_level");
@@ -70,18 +71,37 @@ export default function RandomChallengePage({}: RandomChallengePageProps) {
       }}
     >
       <div className="max-w-4xl mx-auto">
-        {/* Back to Games Menu Button */}
-        <button
-          onClick={() => navigate("/games")}
-          className="mb-4 inline-flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-bold border transition hover:opacity-85 shadow-xs"
-          style={{
-            backgroundColor: "var(--surface)",
-            borderColor: "var(--border)",
-            color: "var(--text-secondary)",
-          }}
-        >
-          <ArrowLeft className="w-4 h-4" /> Back to Games & Puzzles
-        </button>
+        {/* Back to Games Menu & Mobile Navigation Bar */}
+        <div className="mb-4 flex items-center justify-between gap-3">
+          <button
+            onClick={() => navigate("/games")}
+            className="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-bold border transition hover:opacity-85 shadow-xs"
+            style={{
+              backgroundColor: "var(--surface)",
+              borderColor: "var(--border)",
+              color: "var(--text-secondary)",
+            }}
+          >
+            <ArrowLeft className="w-4 h-4" /> Back to Games & Puzzles
+          </button>
+
+          {onOpenMenu && (
+            <button
+              type="button"
+              onClick={onOpenMenu}
+              aria-label="Open navigation menu"
+              className="lg:hidden p-2 rounded-xl border transition hover:opacity-80 shadow-xs flex items-center gap-1.5 text-xs font-bold"
+              style={{
+                backgroundColor: "var(--surface)",
+                borderColor: "var(--border)",
+                color: "var(--text-primary)",
+              }}
+            >
+              <Menu size={18} />
+              <span>Menu</span>
+            </button>
+          )}
+        </div>
 
         <div
           className="mb-8 pb-4 border-b flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4"

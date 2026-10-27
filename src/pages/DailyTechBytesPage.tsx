@@ -9,6 +9,7 @@ import {
   Clock,
   Tag,
   RefreshCw,
+  Menu,
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import {
@@ -23,7 +24,7 @@ interface DailyTechBytesPageProps {
   onOpenMenu?: () => void;
 }
 
-export default function DailyTechBytesPage({}: DailyTechBytesPageProps) {
+export default function DailyTechBytesPage({ onOpenMenu }: DailyTechBytesPageProps) {
   const navigate = useNavigate();
   const [viewMode, setViewMode] = useState<"news" | "quiz">("news");
   const [articles, setArticles] = useState<TechArticle[]>([]);
@@ -120,19 +121,36 @@ export default function DailyTechBytesPage({}: DailyTechBytesPageProps) {
           className="pb-6 border-b flex flex-col md:flex-row md:items-center justify-between gap-4"
           style={{ borderColor: "var(--border)" }}
         >
-          <div>
-            <div
-              className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider mb-2"
-              style={{ color: "var(--accent)" }}
-            >
-              <Cpu className="w-4 h-4" /> Live Tech Feed & Daily Streak
+          <div className="flex items-start gap-3">
+            {onOpenMenu && (
+              <button
+                type="button"
+                onClick={onOpenMenu}
+                aria-label="Open navigation menu"
+                className="lg:hidden p-2.5 rounded-2xl border transition hover:opacity-80 shrink-0 shadow-xs mt-1"
+                style={{
+                  backgroundColor: "var(--surface)",
+                  borderColor: "var(--border)",
+                  color: "var(--text-primary)",
+                }}
+              >
+                <Menu size={22} />
+              </button>
+            )}
+            <div>
+              <div
+                className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider mb-2"
+                style={{ color: "var(--accent)" }}
+              >
+                <Cpu className="w-4 h-4" /> Live Tech Feed & Daily Streak
+              </div>
+              <h1 className="text-3xl sm:text-4xl font-black flex items-center gap-3">
+                <Sparkles className="w-8 h-8" style={{ color: "var(--accent)" }} /> Daily Tech Bytes
+              </h1>
+              <p className="text-sm mt-1" style={{ color: "var(--text-secondary)" }}>
+                Read live industry updates from Developer & Hacker communities, or take today&apos;s comprehension quiz!
+              </p>
             </div>
-            <h1 className="text-3xl sm:text-4xl font-black flex items-center gap-3">
-              <Sparkles className="w-8 h-8" style={{ color: "var(--accent)" }} /> Daily Tech Bytes
-            </h1>
-            <p className="text-sm mt-1" style={{ color: "var(--text-secondary)" }}>
-              Read live industry updates from Developer & Hacker communities, or take today&apos;s comprehension quiz!
-            </p>
           </div>
 
           <div className="flex flex-wrap items-center gap-3">
