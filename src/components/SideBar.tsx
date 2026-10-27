@@ -84,17 +84,17 @@ export default function Sidebar({ open, onClose }: SidebarProps) {
       >
         <div className="mb-9 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl overflow-hidden flex items-center justify-center p-0.5 border border-slate-200/60 dark:border-slate-800 shadow-sm bg-white dark:bg-slate-900">
+            <div className="w-11 h-11 rounded-full overflow-hidden flex items-center justify-center border-2 border-cyan-400/60 shadow-md bg-white dark:bg-slate-900 shrink-0">
               <img
-                src="/mind.webp"
+                src="/novamind-logo.png"
                 alt="NovaMind"
-                className="w-full h-full object-contain"
+                className="w-full h-full object-cover scale-105"
                 onError={(e) => {
-                  (e.currentTarget as HTMLImageElement).src = "/mind";
+                  (e.currentTarget as HTMLImageElement).src = "/mind web.png";
                 }}
               />
             </div>
-            <span className="text-xl font-extrabold tracking-tight bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent dark:from-sky-400 dark:to-indigo-400">
+            <span className="text-xl font-extrabold tracking-tight bg-gradient-to-r from-blue-600 via-indigo-600 to-cyan-500 bg-clip-text text-transparent dark:from-sky-400 dark:via-indigo-400 dark:to-cyan-300">
               NovaMind
             </span>
           </div>

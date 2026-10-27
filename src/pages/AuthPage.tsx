@@ -66,13 +66,13 @@ export default function AuthPage() {
       <div className="w-full max-w-md rounded-2xl border border-slate-200 bg-white p-8 shadow-xl transition-all dark:border-white/10 dark:bg-gray-900">
         {/* Brand */}
         <div className="mb-8 text-center">
-          <div className="mx-auto mb-3 flex h-16 w-16 items-center justify-center rounded-2xl bg-white p-1 shadow-md border border-slate-200 dark:border-slate-800 dark:bg-slate-900 overflow-hidden">
+          <div className="mx-auto mb-3 flex h-20 w-20 items-center justify-center rounded-full bg-white shadow-lg border-2 border-cyan-400/60 dark:border-cyan-400/40 dark:bg-slate-900 overflow-hidden">
             <img
-              src="/mind.webp"
+              src="/novamind-logo.png"
               alt="NovaMind"
-              className="w-full h-full object-contain"
+              className="w-full h-full object-cover scale-105"
               onError={(e) => {
-                (e.currentTarget as HTMLImageElement).src = "/mind";
+                (e.currentTarget as HTMLImageElement).src = "/mind web.png";
               }}
             />
           </div>
