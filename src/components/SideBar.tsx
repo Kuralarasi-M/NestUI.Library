@@ -84,13 +84,19 @@ export default function Sidebar({ open, onClose }: SidebarProps) {
       >
         <div className="mb-9 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div
-              className="rounded-xl p-2"
-              style={{ backgroundColor: "var(--btn-primary)", color: "var(--btn-text)" }}
-            >
-              <BookOpen size={24} />
+            <div className="w-10 h-10 rounded-xl overflow-hidden flex items-center justify-center p-0.5 border border-slate-200/60 dark:border-slate-800 shadow-sm bg-white dark:bg-slate-900">
+              <img
+                src="/mind.webp"
+                alt="NovaMind"
+                className="w-full h-full object-contain"
+                onError={(e) => {
+                  (e.currentTarget as HTMLImageElement).src = "/mind";
+                }}
+              />
             </div>
-            <span className="text-lg font-bold tracking-tight">BookNest</span>
+            <span className="text-xl font-extrabold tracking-tight bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent dark:from-sky-400 dark:to-indigo-400">
+              NovaMind
+            </span>
           </div>
 
           <button

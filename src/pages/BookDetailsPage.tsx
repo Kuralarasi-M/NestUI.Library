@@ -317,12 +317,12 @@ export default function BookDetailsPage({ onOpenMenu }: BookDetailsPageProps) {
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {/* Option 1: BookNest In-App Immersive Reader */}
+                {/* Option 1: NovaMind In-App Immersive Reader */}
                 <div className="flex flex-col justify-between p-4 rounded-xl border-2 border-indigo-500/40 bg-indigo-50/50 dark:bg-indigo-950/20 dark:border-indigo-500/30">
                   <div>
                     <div className="flex items-center justify-between mb-2">
                       <span className="font-bold text-base text-indigo-950 dark:text-indigo-200">
-                        BookNest Reader
+                        NovaMind Reader
                       </span>
                       <span className="rounded-full bg-indigo-600 text-white text-[10px] font-bold px-2 py-0.5">
                         RECOMMENDED
@@ -343,7 +343,7 @@ export default function BookDetailsPage({ onOpenMenu }: BookDetailsPageProps) {
                       className="w-full inline-flex items-center justify-center gap-2 rounded-xl bg-indigo-600 px-5 py-2.5 font-semibold text-white shadow transition hover:bg-indigo-700 text-sm"
                     >
                       <BookOpen size={16} />
-                      Read with BookNest
+                      Read with NovaMind
                     </button>
                   ) : (
                     <p className="text-xs text-slate-500 dark:text-slate-400 italic">

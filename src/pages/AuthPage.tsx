@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { BookOpen, Mail, Lock, User, ArrowRight, LoaderCircle, Eye, EyeOff } from "lucide-react";
+import { Mail, Lock, User, ArrowRight, LoaderCircle, Eye, EyeOff } from "lucide-react";
 import { loginUser, registerUser, saveLoggedInUser } from "../services/authServices";
 import { syncFcmToken } from "../services/fcmService";
 
@@ -66,16 +66,23 @@ export default function AuthPage() {
       <div className="w-full max-w-md rounded-2xl border border-slate-200 bg-white p-8 shadow-xl transition-all dark:border-white/10 dark:bg-gray-900">
         {/* Brand */}
         <div className="mb-8 text-center">
-          <div className="mx-auto mb-3 flex h-14 w-14 items-center justify-center rounded-2xl bg-indigo-600 text-white shadow-md">
-            <BookOpen size={28} />
+          <div className="mx-auto mb-3 flex h-16 w-16 items-center justify-center rounded-2xl bg-white p-1 shadow-md border border-slate-200 dark:border-slate-800 dark:bg-slate-900 overflow-hidden">
+            <img
+              src="/mind.webp"
+              alt="NovaMind"
+              className="w-full h-full object-contain"
+              onError={(e) => {
+                (e.currentTarget as HTMLImageElement).src = "/mind";
+              }}
+            />
           </div>
           <h1 className="text-2xl font-bold tracking-tight text-slate-900 dark:text-white">
-            {isRegister ? "Join BookNest" : "Welcome Back"}
+            {isRegister ? "Join NovaMind" : "Welcome Back to NovaMind"}
           </h1>
           <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
             {isRegister
-              ? "Create your reader account to start reading"
-              : "Sign in to access your library and saved books"}
+              ? "Create your account to unlock learning, games, and tech updates"
+              : "Sign in to access your library, streaks, and tech feed"}
           </p>
         </div>
 
