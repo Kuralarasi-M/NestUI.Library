@@ -16,20 +16,20 @@ import {
 
 export default function TechBannerGraphic() {
   const leftPills = [
-    { icon: <SiReact className="text-[#61DAFB]" />, name: 'React', orbit: 'animate-[float_4s_ease-in-out_infinite]', custom: 'self-start ml-2' },
-    { icon: <SiTailwindcss className="text-[#06B6D4]" />, name: 'Tailwind', orbit: 'animate-[float_4.5s_ease-in-out_infinite_0.5s]', custom: 'self-end -mr-1' },
-    { icon: <SiDocker className="text-[#2496ED]" />, name: 'Docker', orbit: 'animate-[float_4.2s_ease-in-out_infinite_1.2s]', custom: 'self-center ml-1' },
-    { icon: <SiGit className="text-[#F05032]" />, name: 'Git', orbit: 'animate-[float_3.5s_ease-in-out_infinite_1.8s]', custom: 'self-start ml-4' },
-    { icon: <SiVite className="text-[#646CFF]" />, name: 'Vite', orbit: 'animate-[float_4.8s_ease-in-out_infinite_0.8s]', custom: 'self-end mr-3' },
+    { icon: <SiReact className="text-[#61DAFB]" />, name: 'React', orbit: 'animate-float-1', custom: 'self-start ml-2' },
+    { icon: <SiTailwindcss className="text-[#06B6D4]" />, name: 'Tailwind', orbit: 'animate-float-2', custom: 'self-end -mr-1' },
+    { icon: <SiDocker className="text-[#2496ED]" />, name: 'Docker', orbit: 'animate-float-3', custom: 'self-center ml-1' },
+    { icon: <SiGit className="text-[#F05032]" />, name: 'Git', orbit: 'animate-float-4', custom: 'self-start ml-4' },
+    { icon: <SiVite className="text-[#646CFF]" />, name: 'Vite', orbit: 'animate-float-5', custom: 'self-end mr-3' },
   ];
 
   const rightPills = [
-    { icon: <SiDotnet className="text-[#512BD4]" />, name: '.NET', orbit: 'animate-[float_5s_ease-in-out_infinite_0.7s]', custom: 'self-end mr-2' },
-    { icon: <SiJavascript className="text-[#F7DF1E]" />, name: 'JS', orbit: 'animate-[float_3.8s_ease-in-out_infinite_1.5s]', custom: 'self-start -ml-1' },
-    { icon: <SiPostgresql className="text-[#4169E1]" />, name: 'SQL', orbit: 'animate-[float_4.1s_ease-in-out_infinite_2.2s]', custom: 'self-center mr-1' },
-    { icon: <SiGithub className="text-zinc-800 dark:text-zinc-200" />, name: 'GitHub', orbit: 'animate-[float_4.6s_ease-in-out_infinite_0.3s]', custom: 'self-end mr-4' },
-    { icon: <SiFirebase className="text-[#FFCA28]" />, name: 'Firebase', orbit: 'animate-[float_5.2s_ease-in-out_infinite_1s]', custom: 'self-start ml-2' },
-    { icon: <SiCss className="text-[#1572B6]" />, name: 'CSS', orbit: 'animate-[float_5s_ease-in-out_infinite_2.5s]', custom: 'self-center' },
+    { icon: <SiDotnet className="text-[#512BD4]" />, name: '.NET', orbit: 'animate-float-2', custom: 'self-end mr-2' },
+    { icon: <SiJavascript className="text-[#F7DF1E]" />, name: 'JS', orbit: 'animate-float-1', custom: 'self-start -ml-1' },
+    { icon: <SiPostgresql className="text-[#4169E1]" />, name: 'SQL', orbit: 'animate-float-3', custom: 'self-center mr-1' },
+    { icon: <SiGithub className="text-zinc-800 dark:text-zinc-200" />, name: 'GitHub', orbit: 'animate-float-5', custom: 'self-end mr-4' },
+    { icon: <SiFirebase className="text-[#FFCA28]" />, name: 'Firebase', orbit: 'animate-float-4', custom: 'self-start ml-2' },
+    { icon: <SiCss className="text-[#1572B6]" />, name: 'CSS', orbit: 'animate-float-2', custom: 'self-center' },
   ];
 
   return (
@@ -53,13 +53,13 @@ export default function TechBannerGraphic() {
         ))}
       </div>
 
-      {/* Center Compact Lottie (Reduced Height to ~105px) */}
-      <div className="relative z-10 w-28 h-28 sm:w-32 sm:h-32 flex items-center justify-center mx-1 drop-shadow-md">
+      {/* Center Lottie (Enlarged while maintaining compact banner proportions) */}
+      <div className="relative z-10 w-36 h-36 sm:w-40 sm:h-40 flex items-center justify-center mx-2 drop-shadow-lg">
         <Lottie 
           src={developerAnimation} 
           loop={true} 
           autoplay={true}
-          className="w-full h-full object-contain pointer-events-none" 
+          className="w-full h-full object-contain pointer-events-none scale-105" 
         />
       </div>
 

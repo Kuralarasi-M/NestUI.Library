@@ -108,16 +108,55 @@ textarea {
   animation: confetti-fall 3.5s linear forwards;
 }
 
-@keyframes float {
+@keyframes float-smooth {
   0%, 100% {
-    transform: translateY(0px);
+    transform: translate3d(0, 0px, 0);
   }
   50% {
-    transform: translateY(-8px);
+    transform: translate3d(0, -6px, 0);
   }
 }
 
-.animate-float {
-  animation: float 4s ease-in-out infinite;
+@keyframes float-smooth-slow {
+  0%, 100% {
+    transform: translate3d(0, 0px, 0);
+  }
+  50% {
+    transform: translate3d(0, -8px, 0);
+  }
+}
+
+@keyframes float-smooth-reverse {
+  0%, 100% {
+    transform: translate3d(0, -6px, 0);
+  }
+  50% {
+    transform: translate3d(0, 0px, 0);
+  }
+}
+
+.animate-float-1 {
+  animation: float-smooth 5s cubic-bezier(0.45, 0.05, 0.55, 0.95) infinite;
+  will-change: transform;
+}
+
+.animate-float-2 {
+  animation: float-smooth-slow 6s cubic-bezier(0.45, 0.05, 0.55, 0.95) infinite 1s;
+  will-change: transform;
+}
+
+.animate-float-3 {
+  animation: float-smooth-reverse 5.5s cubic-bezier(0.45, 0.05, 0.55, 0.95) infinite 0.5s;
+  will-change: transform;
+}
+
+.animate-float-4 {
+  animation: float-smooth 6.5s cubic-bezier(0.45, 0.05, 0.55, 0.95) infinite 1.8s;
+  will-change: transform;
+}
+
+.animate-float-5 {
+  animation: float-smooth-slow 5.2s cubic-bezier(0.45, 0.05, 0.55, 0.95) infinite 2.2s;
+  will-change: transform;
 }
 
