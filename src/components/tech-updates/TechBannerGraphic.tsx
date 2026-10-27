@@ -37,24 +37,24 @@ export default function TechBannerGraphic() {
       {/* Background Soft Glow */}
       <div className="absolute w-72 h-24 rounded-full bg-blue-500/10 dark:bg-cyan-500/10 blur-2xl pointer-events-none" />
 
-      {/* Left Uneven Pill Cluster (Visible on tablet & desktop) */}
-      <div className="hidden sm:flex flex-col gap-2 w-28 md:w-32 justify-center z-10">
+      {/* Left Uneven Pill Cluster (Visible on mobile, tablet & desktop) */}
+      <div className="flex flex-col gap-1.5 sm:gap-2 w-20 sm:w-28 md:w-32 justify-center z-10">
         {leftPills.map((pill, idx) => (
           <div
             key={idx}
-            className={`${pill.custom} ${pill.orbit} flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold
+            className={`${pill.custom} ${pill.orbit} flex items-center gap-1 sm:gap-1.5 px-2 py-0.5 sm:px-2.5 sm:py-1 rounded-full text-[10px] sm:text-xs font-semibold
               bg-white/95 dark:bg-slate-900/95 text-slate-800 dark:text-slate-100 
               border border-slate-200/90 dark:border-slate-800 
               shadow-sm backdrop-blur-md transition-all duration-300 hover:scale-105 cursor-pointer whitespace-nowrap`}
           >
-            <span className="text-sm sm:text-base">{pill.icon}</span>
-            <span className="text-[11px] font-medium tracking-tight">{pill.name}</span>
+            <span className="text-xs sm:text-sm md:text-base">{pill.icon}</span>
+            <span className="text-[10px] sm:text-[11px] font-medium tracking-tight">{pill.name}</span>
           </div>
         ))}
       </div>
 
       {/* Center Lottie - Crystal Clear SVG Rendering (Visible on all screens) */}
-      <div className="relative z-10 w-36 h-32 sm:w-44 sm:h-36 md:w-52 md:h-44 flex items-center justify-center mx-1 sm:mx-2 drop-shadow-xl overflow-visible lottie-sharp">
+      <div className="relative z-10 w-28 h-28 sm:w-44 sm:h-36 md:w-52 md:h-44 flex items-center justify-center mx-1 sm:mx-2 drop-shadow-xl overflow-visible lottie-sharp shrink-0">
         <Lottie 
           src={developerAnimation} 
           loop={true} 
@@ -67,18 +67,18 @@ export default function TechBannerGraphic() {
         />
       </div>
 
-      {/* Right Uneven Pill Cluster (Visible on tablet & desktop) */}
-      <div className="hidden sm:flex flex-col gap-2 w-28 md:w-32 justify-center z-10">
+      {/* Right Uneven Pill Cluster (Visible on mobile, tablet & desktop) */}
+      <div className="flex flex-col gap-1.5 sm:gap-2 w-20 sm:w-28 md:w-32 justify-center z-10">
         {rightPills.map((pill, idx) => (
           <div
             key={idx}
-            className={`${pill.custom} ${pill.orbit} flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold
+            className={`${pill.custom} ${pill.orbit} flex items-center gap-1 sm:gap-1.5 px-2 py-0.5 sm:px-2.5 sm:py-1 rounded-full text-[10px] sm:text-xs font-semibold
               bg-white/95 dark:bg-slate-900/95 text-slate-800 dark:text-slate-100 
               border border-slate-200/90 dark:border-slate-800 
               shadow-sm backdrop-blur-md transition-all duration-300 hover:scale-105 cursor-pointer whitespace-nowrap`}
           >
-            <span className="text-sm sm:text-base">{pill.icon}</span>
-            <span className="text-[11px] font-medium tracking-tight">{pill.name}</span>
+            <span className="text-xs sm:text-sm md:text-base">{pill.icon}</span>
+            <span className="text-[10px] sm:text-[11px] font-medium tracking-tight">{pill.name}</span>
           </div>
         ))}
       </div>
